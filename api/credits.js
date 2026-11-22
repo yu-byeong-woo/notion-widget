@@ -1,6 +1,5 @@
 const GRADUATION_GOAL = 136;
 const NOTION_API_VERSION = '2022-06-28';
-const DEFAULT_SUBJECT_DB_ID = '9ad17ba3-c6d5-8205-a5ea-0163dc1d868a';
 
 function normalizeNotionId(raw) {
   if (!raw) return null;
@@ -236,7 +235,7 @@ async function handlePost(req, apiKey, dbId, res) {
   let subjectWarning = null;
 
   if (linkToSubject) {
-    const subjectDb = normalizeNotionId(process.env.NOTION_SUBJECT_DATABASE_ID || DEFAULT_SUBJECT_DB_ID);
+    const subjectDb = normalizeNotionId(process.env.NOTION_SUBJECT_DATABASE_ID);
     if (subjectDb) {
       const subjectProps = {
         이름: { title: [{ text: { content: name } }] },
