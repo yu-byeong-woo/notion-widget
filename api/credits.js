@@ -1,13 +1,10 @@
 const GRADUATION_GOAL = 136;
 const NOTION_API_VERSION = '2022-06-28';
+const DEFAULT_SUBJECT_DB_ID = '9ad17ba3-c6d5-8205-a5ea-0163dc1d868a';
 
-/**
- * Extracts a 32-char hex Notion ID from a raw ID, UUID, or full Notion URL.
- */
 function normalizeNotionId(raw) {
   if (!raw) return null;
   const trimmed = String(raw).trim();
-  // Match 32 hex chars (with or without hyphens)
   const uuidMatch = trimmed.match(
     /([0-9a-fA-F]{8})-?([0-9a-fA-F]{4})-?([0-9a-fA-F]{4})-?([0-9a-fA-F]{4})-?([0-9a-fA-F]{12})/
   );
@@ -77,6 +74,38 @@ function normalizeCategoryKey(categoryName) {
   return categoryName || '';
 }
 
+async function notionFetch(apiKey, path, method = 'GET', bodyObj = null) {
+  const options = {
+    method,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Notion-Version': NOTION_API_VERSION,
+      'Content-Type': 'application/json',
+    },
+  };
+  if (bodyObj) {
+    options.body = JSON.stringify(bodyObj);
+  }
+
+  const response = await fetch(`https://api.notion.com/v1${path}`, options);
+  const text = await response.text();
+  let json = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    // ignore parse error
+  }
+
+  if (!response.ok) {
+    const err = new Error(json?.message || `Notion API Error (${response.status})`);
+    err.status = response.status;
+    err.code = json?.code || 'NOTION_API_ERROR';
+    throw err;
+  }
+
+  return json;
+}
+
 async function queryAllPages(apiKey, databaseId) {
   const pages = [];
   let hasMore = true;
@@ -86,31 +115,7 @@ async function queryAllPages(apiKey, databaseId) {
     const body = { page_size: 100 };
     if (startCursor) body.start_cursor = startCursor;
 
-    const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Notion-Version': NOTION_API_VERSION,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      let errJson = null;
-      try {
-        errJson = JSON.parse(errText);
-      } catch {
-        // ignore parse failure
-      }
-      const err = new Error(errJson?.message || `Notion API Error (${response.status})`);
-      err.status = response.status;
-      err.code = errJson?.code || 'NOTION_API_ERROR';
-      throw err;
-    }
-
-    const data = await response.json();
+    const data = await notionFetch(apiKey, `/databases/${databaseId}/query`, 'POST', body);
     if (Array.isArray(data.results)) {
       pages.push(...data.results);
     }
@@ -121,14 +126,179 @@ async function queryAllPages(apiKey, databaseId) {
   return pages;
 }
 
-module.exports = async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+function readJsonBody(req) {
+  if (req.body && typeof req.body === 'object') {
+    return Promise.resolve(req.body);
+  }
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+    });
+    req.on('end', () => {
+      if (!raw) return resolve({});
+      try {
+        resolve(JSON.parse(raw));
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+async function handleGet(apiKey, dbId, res) {
+  const pages = await queryAllPages(apiKey, dbId.formatted);
+
+  const courses = pages
+    .map((page) => {
+      const props = page.properties || {};
+      const name = getTitleText(props['과목명'], props);
+      const credits = getNumberValue(props['학점']);
+      const statusObj = getSelectOrStatus(props['상태']);
+      const categoryObj = getSelectOrStatus(props['이수구분'] || props['구분']);
+      const semesterObj = getSelectOrStatus(props['학기'] || props['이수 학기']);
+
+      const status = normalizeStatusKey(statusObj.name);
+      const category = normalizeCategoryKey(categoryObj.name);
+      const iconEmoji = page.icon?.type === 'emoji' ? page.icon.emoji : null;
+
+      return {
+        id: page.id,
+        name,
+        credits,
+        status,
+        statusColor: statusObj.color,
+        category,
+        categoryColor: categoryObj.color,
+        semester: semesterObj.name,
+        semesterColor: semesterObj.color,
+        icon: iconEmoji,
+        url: page.url || null,
+      };
+    })
+    .filter((course) => course.name !== '' && !(course.credits === 0 && course.name.includes('졸업 요건')));
+
+  let completedCredits = 0;
+  let inProgressCredits = 0;
+
+  for (const course of courses) {
+    if (course.status === '수강완료') {
+      completedCredits += course.credits;
+    } else if (course.status === '수강중') {
+      inProgressCredits += course.credits;
+    }
+  }
+
+  completedCredits = Math.round(completedCredits * 10) / 10;
+  inProgressCredits = Math.round(inProgressCredits * 10) / 10;
+  const remainingCredits = Math.max(0, Math.round((GRADUATION_GOAL - completedCredits) * 10) / 10);
+  const completionRate = Math.min(100, Math.round((completedCredits / GRADUATION_GOAL) * 1000) / 10);
+
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(200).json({
+    summary: {
+      goalCredits: GRADUATION_GOAL,
+      completedCredits,
+      inProgressCredits,
+      remainingCredits,
+      completionRate,
+    },
+    courses,
+    databaseUrl: `https://www.notion.so/${dbId.clean}`,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+async function handlePost(req, apiKey, dbId, res) {
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    res.status(400).json({ error: '잘못된 JSON 요청입니다.', code: 'BAD_REQUEST' });
     return;
   }
 
-  if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method Not Allowed' });
+  const name = String(body.name || '').trim();
+  const semester = String(body.semester || '').trim();
+  const category = String(body.category || '').trim();
+  const status = normalizeStatusKey(body.status || '수강중');
+  const creditsNum = Number(body.credits);
+  const creditsStr = Number.isFinite(creditsNum) && creditsNum > 0 ? String(creditsNum) : '3';
+  const linkToSubject = body.linkToSubject !== false;
+
+  if (!name) {
+    res.status(400).json({ error: '과목명을 입력해 주세요.', code: 'MISSING_NAME' });
+    return;
+  }
+
+  let subjectPageId = null;
+  let subjectWarning = null;
+
+  if (linkToSubject) {
+    const subjectDb = normalizeNotionId(process.env.NOTION_SUBJECT_DATABASE_ID || DEFAULT_SUBJECT_DB_ID);
+    if (subjectDb) {
+      const subjectProps = {
+        이름: { title: [{ text: { content: name } }] },
+        학점: { select: { name: creditsStr } },
+        '활성 상태': { select: { name: status === '수강중' ? '활성' : '비활성' } },
+      };
+      if (semester) subjectProps['이수 학기'] = { select: { name: semester } };
+      if (category) subjectProps['구분'] = { select: { name: category } };
+      if (Array.isArray(body.days) && body.days.length > 0) {
+        subjectProps['요일'] = { multi_select: body.days.map((d) => ({ name: d })) };
+      }
+      if (body.time && String(body.time).trim()) {
+        subjectProps['시간'] = { rich_text: [{ text: { content: String(body.time).trim() } }] };
+      }
+      if (body.room && String(body.room).trim()) {
+        subjectProps['강의실'] = { rich_text: [{ text: { content: String(body.room).trim() } }] };
+      }
+      if (body.professor && String(body.professor).trim()) {
+        subjectProps['교수님'] = { rich_text: [{ text: { content: String(body.professor).trim() } }] };
+      }
+
+      try {
+        const createdSubject = await notionFetch(apiKey, '/pages', 'POST', {
+          parent: { database_id: subjectDb.formatted },
+          properties: subjectProps,
+        });
+        subjectPageId = createdSubject?.id || null;
+      } catch (err) {
+        // Non-fatal: still create in 이수 과목 DB and inform user
+        subjectWarning = `시간표/강의 노트(Subject DB) 연동 건너뜀: ${err.message}`;
+      }
+    }
+  }
+
+  const courseProps = {
+    과목명: { title: [{ text: { content: name } }] },
+    학점: { select: { name: creditsStr } },
+    상태: { status: { name: status || '수강중' } },
+  };
+  if (semester) courseProps['이수 학기'] = { select: { name: semester } };
+  if (category) courseProps['구분'] = { select: { name: category } };
+  if (subjectPageId) {
+    courseProps['강의 노트'] = { relation: [{ id: subjectPageId }] };
+  }
+
+  const createdCourse = await notionFetch(apiKey, '/pages', 'POST', {
+    parent: { database_id: dbId.formatted },
+    properties: courseProps,
+  });
+
+  res.status(201).json({
+    ok: true,
+    courseId: createdCourse?.id || null,
+    subjectId: subjectPageId,
+    subjectLinked: Boolean(subjectPageId),
+    subjectWarning,
+  });
+}
+
+module.exports = async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
     return;
   }
 
@@ -153,72 +323,19 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const pages = await queryAllPages(apiKey, dbId.formatted);
-
-    const courses = pages
-      .map((page) => {
-        const props = page.properties || {};
-        const name = getTitleText(props['과목명'], props);
-        const credits = getNumberValue(props['학점']);
-        const statusObj = getSelectOrStatus(props['상태']);
-        const categoryObj = getSelectOrStatus(props['이수구분'] || props['구분']);
-        const semesterObj = getSelectOrStatus(props['학기'] || props['이수 학기']);
-
-        const status = normalizeStatusKey(statusObj.name);
-        const category = normalizeCategoryKey(categoryObj.name);
-        const iconEmoji = page.icon?.type === 'emoji' ? page.icon.emoji : null;
-
-        return {
-          id: page.id,
-          name,
-          credits,
-          status,
-          statusColor: statusObj.color,
-          category,
-          categoryColor: categoryObj.color,
-          semester: semesterObj.name,
-          semesterColor: semesterObj.color,
-          icon: iconEmoji,
-          url: page.url || null,
-        };
-      })
-      .filter((course) => course.name !== '');
-
-    let completedCredits = 0;
-    let inProgressCredits = 0;
-
-    for (const course of courses) {
-      if (course.status === '수강완료') {
-        completedCredits += course.credits;
-      } else if (course.status === '수강중') {
-        inProgressCredits += course.credits;
-      }
+    if (req.method === 'GET') {
+      await handleGet(apiKey, dbId, res);
+      return;
     }
-
-    // Round to avoid floating point artifacts (e.g. 0.5 credits)
-    completedCredits = Math.round(completedCredits * 10) / 10;
-    inProgressCredits = Math.round(inProgressCredits * 10) / 10;
-    const remainingCredits = Math.max(0, Math.round((GRADUATION_GOAL - completedCredits) * 10) / 10);
-    const completionRate = Math.min(100, Math.round((completedCredits / GRADUATION_GOAL) * 1000) / 10);
-
-    // Keep responses snappy yet fresh for Notion embeds
-    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
-    res.status(200).json({
-      summary: {
-        goalCredits: GRADUATION_GOAL,
-        completedCredits,
-        inProgressCredits,
-        remainingCredits,
-        completionRate,
-      },
-      courses,
-      databaseUrl: `https://www.notion.so/${dbId.clean}`,
-      updatedAt: new Date().toISOString(),
-    });
+    if (req.method === 'POST') {
+      await handlePost(req, apiKey, dbId, res);
+      return;
+    }
+    res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error) {
     const statusCode = error.status && error.status >= 400 && error.status < 600 ? error.status : 500;
     res.status(statusCode).json({
-      error: error.message || '노션 데이터를 불러오는 중 오류가 발생했습니다.',
+      error: error.message || '노션 요청 처리 중 오류가 발생했습니다.',
       code: error.code || 'INTERNAL_ERROR',
     });
   }

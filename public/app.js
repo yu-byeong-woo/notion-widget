@@ -8,9 +8,10 @@
     data: null,
     activeFilter: '전체',
     isSyncing: false,
+    isSubmitting: false,
+    selectedDays: new Set(),
   };
 
-  // DOM References
   const el = {
     syncBtn: document.getElementById('sync-btn'),
     syncLabel: document.getElementById('sync-label'),
@@ -30,11 +31,27 @@
     tbody: document.getElementById('courses-tbody'),
     addCourseBtn: document.getElementById('add-course-btn'),
     addCourseFooter: document.getElementById('add-course-footer'),
+
+    // Modal elements
+    addModal: document.getElementById('add-modal'),
+    modalCloseBtn: document.getElementById('modal-close-btn'),
+    modalCancelBtn: document.getElementById('modal-cancel-btn'),
+    modalSubmitBtn: document.getElementById('modal-submit-btn'),
+    addCourseForm: document.getElementById('add-course-form'),
+    courseNameInput: document.getElementById('course-name-input'),
+    courseSemesterSelect: document.getElementById('course-semester-select'),
+    courseCategorySelect: document.getElementById('course-category-select'),
+    courseStatusSelect: document.getElementById('course-status-select'),
+    courseCreditsSelect: document.getElementById('course-credits-select'),
+    linkSubjectCheckbox: document.getElementById('link-subject-checkbox'),
+    subjectExtraFields: document.getElementById('subject-extra-fields'),
+    dayChips: Array.from(document.querySelectorAll('.day-chip')),
+    courseTimeInput: document.getElementById('course-time-input'),
+    courseRoomInput: document.getElementById('course-room-input'),
+    courseProfInput: document.getElementById('course-prof-input'),
+    modalError: document.getElementById('modal-error'),
   };
 
-  // =========================================================================
-  // Theme Sync (Auto Dark / Light following OS / Notion Desktop setting)
-  // =========================================================================
   function initThemeSync() {
     const params = new URLSearchParams(window.location.search);
     const forced = params.get('theme');
@@ -57,9 +74,6 @@
     }
   }
 
-  // =========================================================================
-  // Helpers
-  // =========================================================================
   function escapeHtml(str) {
     return String(str || '')
       .replace(/&/g, '&amp;')
@@ -128,7 +142,54 @@
   }
 
   // =========================================================================
-  // LocalStorage Cache (0.01s Instant First Render)
+  // Sorting: 1. 학기순 -> 2. 이수구분(전공필수, 전공선택, 교양, 일반) -> 3. 상태 -> 4. 학점순
+  // =========================================================================
+  function getSemesterOrder(semester) {
+    const match = String(semester || '').match(/(\d+)\s*학년\s*(\d+)\s*학기/);
+    if (match) {
+      return Number(match[1]) * 10 + Number(match[2]);
+    }
+    return 999;
+  }
+
+  function getCategoryOrder(category) {
+    const c = String(category || '').replace(/\s+/g, '');
+    if (c === '전공필수') return 1;
+    if (c === '전공선택') return 2;
+    if (c === '교양필수') return 3;
+    if (c === '교양선택') return 4;
+    if (c === '교양') return 5;
+    if (c === '일반선택' || c === '일반') return 6;
+    return 99;
+  }
+
+  function getStatusOrder(status) {
+    const s = String(status || '').replace(/\s+/g, '');
+    if (s === '수강중') return 1;
+    if (s === '수강완료') return 2;
+    return 99;
+  }
+
+  function sortCourses(courses) {
+    return [...courses].sort((a, b) => {
+      const semDiff = getSemesterOrder(a.semester) - getSemesterOrder(b.semester);
+      if (semDiff !== 0) return semDiff;
+
+      const catDiff = getCategoryOrder(a.category) - getCategoryOrder(b.category);
+      if (catDiff !== 0) return catDiff;
+
+      const statusDiff = getStatusOrder(a.status) - getStatusOrder(b.status);
+      if (statusDiff !== 0) return statusDiff;
+
+      const creditDiff = (Number(b.credits) || 0) - (Number(a.credits) || 0);
+      if (creditDiff !== 0) return creditDiff;
+
+      return String(a.name || '').localeCompare(String(b.name || ''), 'ko');
+    });
+  }
+
+  // =========================================================================
+  // LocalStorage Cache
   // =========================================================================
   function readCache() {
     try {
@@ -147,18 +208,13 @@
   function writeCache(data) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {
-      // Ignore quota / private browsing errors
-    }
+    } catch {}
   }
 
-  // =========================================================================
-  // Demo Dataset (activated via ?demo=1 for local preview)
-  // =========================================================================
   function getDemoData() {
     const courses = [
-      { id: '1', name: '인문학베이스캠프', credits: 2, status: '수강완료', category: '교양', semester: '2학년 2학기', semesterColor: 'blue', icon: '📘', url: null },
-      { id: '2', name: '표현과소통 교양', credits: 2, status: '수강완료', category: '교양', semester: '2학년 2학기', semesterColor: 'brown', icon: '🎓', url: null },
+      { id: '1', name: '인문학베이스캠프', credits: 2, status: '수강완료', category: '교양필수', semester: '2학년 2학기', semesterColor: 'blue', icon: '📘', url: null },
+      { id: '2', name: '표현과소통 교양', credits: 2, status: '수강완료', category: '교양선택', semester: '2학년 2학기', semesterColor: 'brown', icon: '🎓', url: null },
       { id: '3', name: '자료구조와 알고리즘', credits: 3, status: '수강완료', category: '전공필수', semester: '2학년 1학기', semesterColor: 'purple', icon: '💻', url: null },
       { id: '4', name: '컴퓨터구조', credits: 3, status: '수강완료', category: '전공필수', semester: '2학년 1학기', semesterColor: 'purple', icon: '⚙️', url: null },
       { id: '5', name: '확률과 통계', credits: 2, status: '수강완료', category: '전공선택', semester: '1학년 2학기', semesterColor: 'gray', icon: '📊', url: null },
@@ -180,9 +236,6 @@
     };
   }
 
-  // =========================================================================
-  // Rendering
-  // =========================================================================
   function showBanner(message) {
     if (!message) {
       el.statusBanner.classList.add('hidden');
@@ -233,25 +286,12 @@
     el.statInProgress.textContent = formatNumber(inProgress);
   }
 
-  function renderDatabaseLinks(databaseUrl) {
-    const targets = [el.addCourseBtn, el.addCourseFooter];
-    for (const anchor of targets) {
-      if (!anchor) continue;
-      if (databaseUrl) {
-        anchor.href = databaseUrl;
-        anchor.classList.remove('is-disabled');
-      } else {
-        anchor.href = '#';
-        anchor.classList.add('is-disabled');
-      }
-    }
-  }
-
   function renderCourses() {
-    const courses = state.data?.courses || [];
+    const rawCourses = state.data?.courses || [];
+    const sorted = sortCourses(rawCourses);
     const filtered = state.activeFilter === '전체'
-      ? courses
-      : courses.filter((c) => {
+      ? sorted
+      : sorted.filter((c) => {
           if (state.activeFilter === '교양') {
             return c.category === '교양' || (c.category && c.category.includes('교양'));
           }
@@ -260,7 +300,7 @@
 
     if (filtered.length === 0) {
       const emptyMsg = state.activeFilter === '전체'
-        ? '등록된 과목이 없습니다. 노션 데이터베이스에 과목을 추가해 보세요.'
+        ? '등록된 과목이 없습니다. 상단 [+ 과목 추가] 버튼을 눌러 과목을 추가해 보세요.'
         : `'${state.activeFilter}'에 해당하는 과목이 없습니다.`;
       el.tbody.innerHTML = `<tr class="empty-row"><td class="empty-cell" colspan="5">${escapeHtml(emptyMsg)}</td></tr>`;
       return;
@@ -307,12 +347,11 @@
   function renderAll(data) {
     state.data = data;
     renderSummary(data.summary);
-    renderDatabaseLinks(data.databaseUrl);
     renderCourses();
   }
 
   // =========================================================================
-  // Tab Filter Events
+  // Tabs
   // =========================================================================
   function initTabs() {
     for (const btn of el.tabs) {
@@ -332,7 +371,130 @@
   }
 
   // =========================================================================
-  // Background Fetch from Vercel Serverless Function (/api/credits)
+  // Add Course Modal
+  // =========================================================================
+  function showModalError(msg) {
+    if (!msg) {
+      el.modalError.classList.add('hidden');
+      el.modalError.textContent = '';
+      return;
+    }
+    el.modalError.textContent = msg;
+    el.modalError.classList.remove('hidden');
+  }
+
+  function openAddModal() {
+    showModalError(null);
+    el.addCourseForm.reset();
+    state.selectedDays.clear();
+    for (const chip of el.dayChips) {
+      chip.classList.remove('is-selected');
+    }
+    el.linkSubjectCheckbox.checked = true;
+    el.subjectExtraFields.classList.remove('hidden');
+
+    if (state.activeFilter !== '전체' && state.activeFilter !== '교양') {
+      el.courseCategorySelect.value = state.activeFilter;
+    }
+
+    el.addModal.classList.remove('hidden');
+    setTimeout(() => el.courseNameInput.focus(), 40);
+  }
+
+  function closeAddModal() {
+    if (state.isSubmitting) return;
+    el.addModal.classList.add('hidden');
+  }
+
+  async function handleAddSubmit(e) {
+    e.preventDefault();
+    if (state.isSubmitting) return;
+
+    const name = el.courseNameInput.value.trim();
+    if (!name) {
+      showModalError('과목명을 입력해 주세요.');
+      return;
+    }
+
+    state.isSubmitting = true;
+    el.modalSubmitBtn.disabled = true;
+    el.modalSubmitBtn.textContent = '추가 중...';
+    showModalError(null);
+
+    const payload = {
+      name,
+      semester: el.courseSemesterSelect.value,
+      category: el.courseCategorySelect.value,
+      status: el.courseStatusSelect.value,
+      credits: Number(el.courseCreditsSelect.value),
+      linkToSubject: el.linkSubjectCheckbox.checked,
+      days: Array.from(state.selectedDays),
+      time: el.courseTimeInput.value.trim(),
+      room: el.courseRoomInput.value.trim(),
+      professor: el.courseProfInput.value.trim(),
+    };
+
+    try {
+      const response = await fetch('/api/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || `HTTP ${response.status}`);
+      }
+
+      state.isSubmitting = false;
+      el.modalSubmitBtn.disabled = false;
+      el.modalSubmitBtn.textContent = '추가하기';
+      el.addModal.classList.add('hidden');
+
+      await fetchLiveCredits(true);
+      if (result.subjectWarning) {
+        showBanner(`과목은 추가되었으나 ${result.subjectWarning}`);
+      }
+    } catch (error) {
+      state.isSubmitting = false;
+      el.modalSubmitBtn.disabled = false;
+      el.modalSubmitBtn.textContent = '추가하기';
+      showModalError(error.message || '과목 추가 중 오류가 발생했습니다.');
+    }
+  }
+
+  function initModal() {
+    el.addCourseBtn.addEventListener('click', openAddModal);
+    el.addCourseFooter.addEventListener('click', openAddModal);
+    el.modalCloseBtn.addEventListener('click', closeAddModal);
+    el.modalCancelBtn.addEventListener('click', closeAddModal);
+    el.addModal.addEventListener('click', (e) => {
+      if (e.target === el.addModal) closeAddModal();
+    });
+
+    el.linkSubjectCheckbox.addEventListener('change', () => {
+      el.subjectExtraFields.classList.toggle('hidden', !el.linkSubjectCheckbox.checked);
+    });
+
+    for (const chip of el.dayChips) {
+      chip.addEventListener('click', () => {
+        const day = chip.getAttribute('data-day');
+        if (!day) return;
+        if (state.selectedDays.has(day)) {
+          state.selectedDays.delete(day);
+          chip.classList.remove('is-selected');
+        } else {
+          state.selectedDays.add(day);
+          chip.classList.add('is-selected');
+        }
+      });
+    }
+
+    el.addCourseForm.addEventListener('submit', handleAddSubmit);
+  }
+
+  // =========================================================================
+  // Fetch Live Data
   // =========================================================================
   async function fetchLiveCredits(manual = false) {
     if (state.isSyncing) return;
@@ -367,12 +529,10 @@
     }
   }
 
-  // =========================================================================
-  // Bootstrap
-  // =========================================================================
   function init() {
     initThemeSync();
     initTabs();
+    initModal();
 
     el.syncBtn.addEventListener('click', () => fetchLiveCredits(true));
 
@@ -383,13 +543,11 @@
       return;
     }
 
-    // 1. Instant 0.01s render from localStorage cache
     const cached = readCache();
     if (cached) {
       renderAll(cached);
     }
 
-    // 2. Background revalidate from /api/credits
     fetchLiveCredits(false);
   }
 
