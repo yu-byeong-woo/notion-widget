@@ -102,7 +102,7 @@
     }
     if (course.category === '전공필수') return 'pill--purple';
     if (course.category === '전공선택') return 'pill--blue';
-    if (course.category === '교양') return 'pill--amber';
+    if (course.category && course.category.includes('교양')) return 'pill--amber';
     return 'pill--gray';
   }
 
@@ -251,7 +251,12 @@
     const courses = state.data?.courses || [];
     const filtered = state.activeFilter === '전체'
       ? courses
-      : courses.filter((c) => c.category === state.activeFilter);
+      : courses.filter((c) => {
+          if (state.activeFilter === '교양') {
+            return c.category === '교양' || (c.category && c.category.includes('교양'));
+          }
+          return c.category === state.activeFilter;
+        });
 
     if (filtered.length === 0) {
       const emptyMsg = state.activeFilter === '전체'

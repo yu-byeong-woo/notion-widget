@@ -31,6 +31,14 @@ function getNumberValue(prop) {
   if (prop.type === 'number' && typeof prop.number === 'number') {
     return prop.number;
   }
+  if (prop.type === 'select' && prop.select?.name) {
+    const parsed = parseFloat(String(prop.select.name).replace(/[^0-9.]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  if (prop.type === 'status' && prop.status?.name) {
+    const parsed = parseFloat(String(prop.status.name).replace(/[^0-9.]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
   if (prop.type === 'formula' && prop.formula?.type === 'number' && typeof prop.formula.number === 'number') {
     return prop.formula.number;
   }
@@ -153,8 +161,8 @@ module.exports = async function handler(req, res) {
         const name = getTitleText(props['과목명'], props);
         const credits = getNumberValue(props['학점']);
         const statusObj = getSelectOrStatus(props['상태']);
-        const categoryObj = getSelectOrStatus(props['이수구분']);
-        const semesterObj = getSelectOrStatus(props['학기']);
+        const categoryObj = getSelectOrStatus(props['이수구분'] || props['구분']);
+        const semesterObj = getSelectOrStatus(props['학기'] || props['이수 학기']);
 
         const status = normalizeStatusKey(statusObj.name);
         const category = normalizeCategoryKey(categoryObj.name);
