@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>Graduation Credit Tracker</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+  />
+  <script>
+    // Apply theme immediately before first paint to avoid any flicker
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var forced = params.get('theme');
+      var root = document.documentElement;
+      if (forced === 'dark' || forced === 'light') {
+        root.setAttribute('data-theme', forced);
+      } else {
+        var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="tracker-shell" id="tracker-shell">
+    <!-- Header -->
+    <header class="tracker-header">
+      <div class="tracker-title-group">
+        <span class="title-cap-icon" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3L2 8.5L12 14L22 8.5L12 3Z" fill="url(#capGrad)" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+            <path d="M6 11V16.2C6 17.6 8.7 19 12 19C15.3 19 18 17.6 18 16.2V11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M21 9.5V15" stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round" />
+            <circle cx="21" cy="15.8" r="1.3" fill="#fbbf24" />
+            <defs>
+              <linearGradient id="capGrad" x1="2" y1="3" x2="22" y2="14" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#64748b" />
+                <stop offset="1" stop-color="#334155" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <h1 class="tracker-title">GRADUATION CREDIT TRACKER</h1>
+      </div>
+
+      <button
+        type="button"
+        id="sync-btn"
+        class="sync-btn"
+        title="노션 데이터 새로고침"
+        aria-label="노션 데이터 새로고침"
+      >
+        <svg class="sync-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+          <path d="M16 16h5v5" />
+        </svg>
+        <span id="sync-label" class="sync-label">동기화</span>
+      </button>
+    </header>
+
+    <!-- Error / Notice Banner (hidden unless needed) -->
+    <div id="status-banner" class="status-banner hidden" role="status"></div>
+
+    <!-- Progress Bar Card -->
+    <section class="progress-card" aria-label="졸업 학점 진행률">
+      <div class="progress-meta">
+        <div class="progress-left">
+          <span id="progress-completed" class="progress-strong">0</span>
+          <span class="progress-muted"> / <span id="progress-goal">136</span> 학점 완료 (<span id="progress-percent">0.0</span>%)</span>
+        </div>
+        <div class="progress-right">
+          <span id="progress-inprogress" class="progress-strong">0</span>
+          <span class="progress-muted"> 학점 수강 중</span>
+        </div>
+      </div>
+
+      <div
+        class="progress-track"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="136"
+        aria-valuenow="0"
+        id="progress-bar-container"
+      >
+        <div class="progress-fill-inprogress" id="progress-fill-inprogress" style="width: 0%"></div>
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+    </section>
+
+    <!-- 4 Summary Cards -->
+    <section class="stats-grid" aria-label="학점 요약">
+      <article class="stat-card stat-card--goal">
+        <div class="stat-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+            <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          </svg>
+          <span>졸업 학점</span>
+        </div>
+        <div class="stat-value" id="stat-goal">136</div>
+      </article>
+
+      <article class="stat-card stat-card--completed">
+        <div class="stat-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="5" />
+            <path d="M10.2 12.2l1.3 1.3 2.7-2.8" />
+          </svg>
+          <span>수강한 학점</span>
+        </div>
+        <div class="stat-value" id="stat-completed">0</div>
+      </article>
+
+      <article class="stat-card stat-card--remaining">
+        <div class="stat-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <polyline points="12 7 12 12 15.5 14" />
+          </svg>
+          <span>남은 학점</span>
+        </div>
+        <div class="stat-value" id="stat-remaining">136</div>
+      </article>
+
+      <article class="stat-card stat-card--inprogress">
+        <div class="stat-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+            <path d="M8 7h8M8 11h5" />
+          </svg>
+          <span>수강 중 학점</span>
+        </div>
+        <div class="stat-value" id="stat-inprogress">0</div>
+      </article>
+    </section>
+
+    <!-- Bottom Course List Card -->
+    <section class="courses-card" aria-label="과목 목록">
+      <div class="tabs-bar">
+        <div class="tabs-list" role="tablist" aria-label="이수구분 필터">
+          <button type="button" class="tab-btn is-active" role="tab" aria-selected="true" data-filter="전체">
+            <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="9" y1="4" x2="9" y2="20" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+            </svg>
+            <span>전체</span>
+          </button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="전공필수">
+            <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="9" y1="4" x2="9" y2="20" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+            </svg>
+            <span>전공필수</span>
+          </button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="전공선택">
+            <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="9" y1="4" x2="9" y2="20" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+            </svg>
+            <span>전공선택</span>
+          </button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="교양">
+            <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="9" y1="4" x2="9" y2="20" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+            </svg>
+            <span>교양</span>
+          </button>
+        </div>
+
+        <a
+          id="add-course-btn"
+          class="add-course-btn"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="노션 데이터베이스에서 과목 추가"
+        >
+          <span>+ 과목 추가</span>
+        </a>
+      </div>
+
+      <div class="table-wrap">
+        <table class="courses-table">
+          <thead>
+            <tr>
+              <th class="col-name">
+                <span class="th-inner">
+                  <span class="th-aa">Aa</span>
+                  <span>과목</span>
+                </span>
+              </th>
+              <th class="col-semester">
+                <span class="th-inner">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <line x1="7" y1="9" x2="17" y2="9" />
+                    <line x1="7" y1="13" x2="14" y2="13" />
+                  </svg>
+                  <span>학기</span>
+                </span>
+              </th>
+              <th class="col-category">
+                <span class="th-inner">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
+                  <span>이수구분</span>
+                </span>
+              </th>
+              <th class="col-status">
+                <span class="th-inner">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M9 12l2 2 4-4" />
+                  </svg>
+                  <span>상태</span>
+                </span>
+              </th>
+              <th class="col-credits">
+                <span class="th-inner">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v8M8 12h8" />
+                  </svg>
+                  <span>학점</span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="courses-tbody">
+            <tr class="skeleton-row">
+              <td colspan="5">
+                <div class="skeleton-line"></div>
+              </td>
+            </tr>
+            <tr class="skeleton-row">
+              <td colspan="5">
+                <div class="skeleton-line short"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <a
+        id="add-course-footer"
+        class="table-footer-add"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        + 과목 추가
+      </a>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

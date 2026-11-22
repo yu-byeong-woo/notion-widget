@@ -1,0 +1,741 @@
+/* ==========================================================================
+   Transparent Theme Tokens (Auto Dark / Light for Notion Embeds)
+   ========================================================================== */
+:root,
+:root[data-theme="dark"] {
+  --text-primary: rgba(255, 255, 255, 0.94);
+  --text-secondary: rgba(255, 255, 255, 0.68);
+  --text-muted: rgba(255, 255, 255, 0.44);
+
+  --shell-border: rgba(255, 255, 255, 0.22);
+  --shell-dot: rgba(255, 255, 255, 0.055);
+  --shell-bg: transparent;
+
+  --panel-bg: rgba(255, 255, 255, 0.035);
+  --panel-border: rgba(255, 255, 255, 0.11);
+  --divider: rgba(255, 255, 255, 0.085);
+  --row-hover: rgba(255, 255, 255, 0.04);
+
+  /* Progress Bar */
+  --track-bg: rgba(0, 0, 0, 0.28);
+  --track-border: rgba(56, 217, 245, 0.36);
+  --track-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45);
+  --fill-gradient: linear-gradient(90deg, #5ef2ff 0%, #2ad4ee 55%, #12b8d4 100%);
+  --fill-glow: 0 0 14px rgba(56, 232, 255, 0.65), 0 0 4px rgba(94, 242, 255, 0.9);
+  --fill-inprogress: rgba(74, 222, 128, 0.24);
+
+  /* Summary Cards */
+  --card-goal-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.025) 100%);
+  --card-goal-border: rgba(255, 255, 255, 0.22);
+  --card-goal-text: #ffffff;
+  --card-goal-label: rgba(255, 255, 255, 0.78);
+
+  --card-completed-bg: linear-gradient(180deg, rgba(34, 211, 238, 0.12) 0%, rgba(34, 211, 238, 0.04) 100%);
+  --card-completed-border: rgba(56, 217, 245, 0.5);
+  --card-completed-text: #45e2ff;
+  --card-completed-icon: #38d9f5;
+
+  --card-remaining-bg: linear-gradient(180deg, rgba(245, 158, 11, 0.13) 0%, rgba(245, 158, 11, 0.04) 100%);
+  --card-remaining-border: rgba(245, 158, 11, 0.52);
+  --card-remaining-text: #f59e0b;
+  --card-remaining-icon: #fbbf24;
+
+  --card-inprogress-bg: linear-gradient(180deg, rgba(74, 222, 128, 0.12) 0%, rgba(74, 222, 128, 0.04) 100%);
+  --card-inprogress-border: rgba(74, 222, 128, 0.48);
+  --card-inprogress-text: #4ade80;
+  --card-inprogress-icon: #4ade80;
+
+  /* Buttons & Tabs */
+  --tab-active-text: #ffffff;
+  --tab-active-line: #ffffff;
+  --add-btn-bg: rgba(59, 130, 246, 0.12);
+  --add-btn-border: rgba(96, 165, 250, 0.36);
+  --add-btn-text: #7cc4fa;
+  --add-btn-hover-bg: rgba(59, 130, 246, 0.22);
+
+  /* Notion-like Pills (Dark) */
+  --pill-blue-bg: rgba(59, 130, 246, 0.22);
+  --pill-blue-text: #93c5fd;
+  --pill-cyan-bg: rgba(34, 211, 238, 0.18);
+  --pill-cyan-text: #67e8f9;
+  --pill-green-bg: rgba(34, 197, 94, 0.2);
+  --pill-green-text: #86efac;
+  --pill-amber-bg: rgba(245, 158, 11, 0.2);
+  --pill-amber-text: #fcd34d;
+  --pill-purple-bg: rgba(168, 85, 247, 0.22);
+  --pill-purple-text: #d8b4fe;
+  --pill-pink-bg: rgba(236, 72, 153, 0.2);
+  --pill-pink-text: #f9a8d4;
+  --pill-red-bg: rgba(239, 68, 68, 0.2);
+  --pill-red-text: #fca5a5;
+  --pill-gray-bg: rgba(255, 255, 255, 0.1);
+  --pill-gray-text: rgba(255, 255, 255, 0.8);
+
+  --skeleton-bg: rgba(255, 255, 255, 0.07);
+  --banner-bg: rgba(245, 158, 11, 0.12);
+  --banner-border: rgba(245, 158, 11, 0.36);
+  --banner-text: #fde68a;
+}
+
+:root[data-theme="light"] {
+  --text-primary: rgba(25, 23, 17, 0.92);
+  --text-secondary: rgba(55, 53, 47, 0.72);
+  --text-muted: rgba(55, 53, 47, 0.48);
+
+  --shell-border: rgba(15, 23, 42, 0.14);
+  --shell-dot: rgba(15, 23, 42, 0.06);
+  --shell-bg: transparent;
+
+  --panel-bg: rgba(15, 23, 42, 0.028);
+  --panel-border: rgba(15, 23, 42, 0.1);
+  --divider: rgba(15, 23, 42, 0.08);
+  --row-hover: rgba(15, 23, 42, 0.035);
+
+  /* Progress Bar */
+  --track-bg: rgba(15, 23, 42, 0.065);
+  --track-border: rgba(6, 182, 212, 0.35);
+  --track-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.08);
+  --fill-gradient: linear-gradient(90deg, #06b6d4 0%, #0ea5e9 100%);
+  --fill-glow: 0 0 10px rgba(6, 182, 212, 0.4);
+  --fill-inprogress: rgba(34, 197, 94, 0.25);
+
+  /* Summary Cards */
+  --card-goal-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.035) 0%, rgba(15, 23, 42, 0.015) 100%);
+  --card-goal-border: rgba(15, 23, 42, 0.16);
+  --card-goal-text: #111827;
+  --card-goal-label: rgba(55, 53, 47, 0.8);
+
+  --card-completed-bg: linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.035) 100%);
+  --card-completed-border: rgba(8, 145, 178, 0.36);
+  --card-completed-text: #0284c7;
+  --card-completed-icon: #0891b2;
+
+  --card-remaining-bg: linear-gradient(180deg, rgba(245, 158, 11, 0.11) 0%, rgba(245, 158, 11, 0.035) 100%);
+  --card-remaining-border: rgba(217, 119, 6, 0.36);
+  --card-remaining-text: #d97706;
+  --card-remaining-icon: #d97706;
+
+  --card-inprogress-bg: linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.035) 100%);
+  --card-inprogress-border: rgba(22, 163, 74, 0.36);
+  --card-inprogress-text: #16a34a;
+  --card-inprogress-icon: #16a34a;
+
+  /* Buttons & Tabs */
+  --tab-active-text: #111827;
+  --tab-active-line: #111827;
+  --add-btn-bg: rgba(37, 99, 235, 0.08);
+  --add-btn-border: rgba(37, 99, 235, 0.28);
+  --add-btn-text: #1d4ed8;
+  --add-btn-hover-bg: rgba(37, 99, 235, 0.14);
+
+  /* Notion-like Pills (Light) */
+  --pill-blue-bg: rgba(37, 99, 235, 0.11);
+  --pill-blue-text: #1d4ed8;
+  --pill-cyan-bg: rgba(8, 145, 178, 0.12);
+  --pill-cyan-text: #0e7490;
+  --pill-green-bg: rgba(22, 163, 74, 0.12);
+  --pill-green-text: #15803d;
+  --pill-amber-bg: rgba(217, 119, 6, 0.12);
+  --pill-amber-text: #b45309;
+  --pill-purple-bg: rgba(147, 51, 234, 0.11);
+  --pill-purple-text: #7e22ce;
+  --pill-pink-bg: rgba(219, 39, 119, 0.11);
+  --pill-pink-text: #be185d;
+  --pill-red-bg: rgba(220, 38, 38, 0.11);
+  --pill-red-text: #b91c1c;
+  --pill-gray-bg: rgba(15, 23, 42, 0.07);
+  --pill-gray-text: rgba(55, 53, 47, 0.85);
+
+  --skeleton-bg: rgba(15, 23, 42, 0.07);
+  --banner-bg: rgba(245, 158, 11, 0.1);
+  --banner-border: rgba(217, 119, 6, 0.35);
+  --banner-text: #92400e;
+}
+
+/* ==========================================================================
+   Base Reset — Fully Transparent Body for Seamless Notion Embedding
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: transparent !important;
+  color: var(--text-primary);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+body {
+  padding: 6px;
+}
+
+/* ==========================================================================
+   Main Outer Shell
+   ========================================================================== */
+.tracker-shell {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 26px 26px;
+  border-radius: 18px;
+  border: 1px solid var(--shell-border);
+  background-color: var(--shell-bg);
+  background-image: radial-gradient(var(--shell-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+.tracker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.title-cap-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.tracker-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sync-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+  flex-shrink: 0;
+}
+
+.sync-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--shell-border);
+}
+
+.sync-btn.is-syncing .sync-icon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Status / Setup Notice Banner
+   ========================================================================== */
+.status-banner {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--banner-border);
+  background: var(--banner-bg);
+  color: var(--banner-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.status-banner.hidden {
+  display: none;
+}
+
+/* ==========================================================================
+   Progress Card
+   ========================================================================== */
+.progress-card {
+  padding: 18px 20px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.progress-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 15px;
+}
+
+.progress-strong {
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-muted {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.progress-track {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--track-bg);
+  border: 1px solid var(--track-border);
+  box-shadow: var(--track-shadow);
+  overflow: hidden;
+}
+
+.progress-fill-inprogress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--fill-inprogress);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--fill-gradient);
+  box-shadow: var(--fill-glow);
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  min-width: 0;
+}
+
+/* ==========================================================================
+   4 Summary Cards
+   ========================================================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  padding: 18px 14px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.stat-value {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card Variants */
+.stat-card--goal {
+  background: var(--card-goal-bg);
+  border-color: var(--card-goal-border);
+}
+.stat-card--goal .stat-label {
+  color: var(--card-goal-label);
+}
+.stat-card--goal .stat-value {
+  color: var(--card-goal-text);
+}
+
+.stat-card--completed {
+  background: var(--card-completed-bg);
+  border-color: var(--card-completed-border);
+}
+.stat-card--completed .stat-label svg {
+  color: var(--card-completed-icon);
+}
+.stat-card--completed .stat-value {
+  color: var(--card-completed-text);
+}
+
+.stat-card--remaining {
+  background: var(--card-remaining-bg);
+  border-color: var(--card-remaining-border);
+}
+.stat-card--remaining .stat-label svg {
+  color: var(--card-remaining-icon);
+}
+.stat-card--remaining .stat-value {
+  color: var(--card-remaining-text);
+}
+
+.stat-card--inprogress {
+  background: var(--card-inprogress-bg);
+  border-color: var(--card-inprogress-border);
+}
+.stat-card--inprogress .stat-label svg {
+  color: var(--card-inprogress-icon);
+}
+.stat-card--inprogress .stat-value {
+  color: var(--card-inprogress-text);
+}
+
+/* ==========================================================================
+   Bottom Course List Card (Notion Database Table Style)
+   ========================================================================== */
+.courses-card {
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid var(--divider);
+  flex-wrap: wrap;
+}
+
+.tabs-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs-list::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px 11px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text-secondary);
+}
+
+.tab-btn.is-active {
+  color: var(--tab-active-text);
+}
+
+.tab-btn.is-active::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--tab-active-line);
+}
+
+.tab-icon {
+  opacity: 0.78;
+  flex-shrink: 0;
+}
+
+.add-course-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 12px;
+  margin-bottom: 10px;
+  border-radius: 7px;
+  border: 1px solid var(--add-btn-border);
+  background: var(--add-btn-bg);
+  color: var(--add-btn-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, transform 0.12s ease;
+}
+
+.add-course-btn:hover {
+  background: var(--add-btn-hover-bg);
+}
+
+.add-course-btn.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Table */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.courses-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.courses-table thead th {
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--divider);
+  white-space: nowrap;
+}
+
+.courses-table thead th:first-child {
+  padding-left: 18px;
+}
+
+.courses-table thead th:last-child {
+  padding-right: 18px;
+}
+
+.th-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.th-aa {
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: -0.02em;
+}
+
+.courses-table tbody tr {
+  border-bottom: 1px solid var(--divider);
+  transition: background-color 0.12s ease;
+}
+
+.courses-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.courses-table tbody tr:not(.skeleton-row):not(.empty-row):hover {
+  background: var(--row-hover);
+}
+
+.courses-table tbody td {
+  padding: 10px 14px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.courses-table tbody td:first-child {
+  padding-left: 18px;
+  white-space: normal;
+  min-width: 160px;
+}
+
+.courses-table tbody td:last-child {
+  padding-right: 18px;
+}
+
+.course-name-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.course-name-cell:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.course-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.pill--blue { background: var(--pill-blue-bg); color: var(--pill-blue-text); }
+.pill--cyan { background: var(--pill-cyan-bg); color: var(--pill-cyan-text); }
+.pill--green { background: var(--pill-green-bg); color: var(--pill-green-text); }
+.pill--amber { background: var(--pill-amber-bg); color: var(--pill-amber-text); }
+.pill--purple { background: var(--pill-purple-bg); color: var(--pill-purple-text); }
+.pill--pink { background: var(--pill-pink-bg); color: var(--pill-pink-text); }
+.pill--red { background: var(--pill-red-bg); color: var(--pill-red-text); }
+.pill--gray { background: var(--pill-gray-bg); color: var(--pill-gray-text); }
+
+/* Footer "+ 과목 추가" */
+.table-footer-add {
+  display: block;
+  padding: 10px 18px 12px;
+  border-top: 1px solid var(--divider);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.14s ease, background-color 0.14s ease;
+}
+
+.table-footer-add:hover {
+  color: var(--text-secondary);
+  background: var(--row-hover);
+}
+
+.table-footer-add.is-disabled {
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+/* Empty & Skeleton States */
+.empty-cell {
+  padding: 26px 18px !important;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.skeleton-line {
+  height: 14px;
+  width: 78%;
+  border-radius: 6px;
+  background: var(--skeleton-bg);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line.short {
+  width: 52%;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
+/* ==========================================================================
+   Responsive Adjustments (Notion Narrow Columns & Mobile)
+   ========================================================================== */
+@media (max-width: 680px) {
+  .tracker-shell {
+    padding: 18px 16px 20px;
+    gap: 14px;
+  }
+
+  .tracker-title {
+    font-size: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px 10px 16px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+  }
+
+  .sync-label {
+    display: none;
+  }
+}
+
+@media (max-width: 440px) {
+  .col-category {
+    display: none;
+  }
+}

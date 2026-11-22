@@ -1,0 +1,13 @@
+{
+  "name": "notion-graduation-credit-tracker",
+  "version": "1.0.0",
+  "description": "Transparent Notion-embeddable Graduation Credit Tracker powered by Notion API & Vercel Serverless Functions",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "preview": "node scripts/dev-server.js"
+  }
+}
