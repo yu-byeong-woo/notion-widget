@@ -9,8 +9,9 @@
   const TERMS = [1, 2];
   const TOTAL_STANDARD_SEMESTERS = GRADES.length * TERMS.length; // 8
 
-  const CACHE_KEY = 'notion_timetable_widget_cache_v1';
+  const CACHE_KEY = 'notion_timetable_widget_cache_v2';
   const CUSTOM_SEMS_KEY = 'notion_timetable_custom_semesters_v1';
+  const HIDDEN_SEMS_KEY = 'notion_timetable_hidden_semesters_v1';
   const ACTIVE_SEM_KEY = 'notion_timetable_active_semester_v1';
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -114,6 +115,7 @@
   const state = {
     courses: [],
     customSemesters: loadJson(CUSTOM_SEMS_KEY, []),
+    hiddenSemesters: loadJson(HIDDEN_SEMS_KEY, []),
     activeSemester: localStorage.getItem(ACTIVE_SEM_KEY) || '',
     selectedGrade: null,
     selectedTerm: null,
@@ -150,6 +152,7 @@
     courseName: document.getElementById('course-name'),
     courseSemester: document.getElementById('course-semester'),
     courseCategory: document.getElementById('course-category'),
+    courseCredits: document.getElementById('course-credits'),
     courseDaysGroup: document.getElementById('course-days-group'),
     courseTime: document.getElementById('course-time'),
     courseRoom: document.getElementById('course-room'),
@@ -180,6 +183,7 @@
         })
       );
       localStorage.setItem(CUSTOM_SEMS_KEY, JSON.stringify(state.customSemesters));
+      localStorage.setItem(HIDDEN_SEMS_KEY, JSON.stringify(state.hiddenSemesters));
       if (state.activeSemester) {
         localStorage.setItem(ACTIVE_SEM_KEY, state.activeSemester);
       }
@@ -214,19 +218,25 @@
   }
 
   function getAllSemesters() {
+    const hidden = new Set(state.hiddenSemesters || []);
     const set = new Set();
     for (const c of state.courses) {
-      if (c.semester && c.semester.trim()) {
-        set.add(c.semester.trim());
+      const sem = (c.semester || '').trim();
+      if (sem && !hidden.has(sem)) {
+        set.add(sem);
       }
     }
     for (const s of state.customSemesters) {
-      if (s && s.trim()) {
-        set.add(s.trim());
+      const sem = (s || '').trim();
+      if (sem && !hidden.has(sem)) {
+        set.add(sem);
       }
     }
     if (set.size === 0) {
-      set.add('1학년 1학기');
+      const fallback = GRADES.flatMap((g) => TERMS.map((t) => formatSemesterLabel(g, t))).find(
+        (s) => !hidden.has(s)
+      );
+      if (fallback) set.add(fallback);
     }
     return Array.from(set).sort((a, b) => {
       const diff = parseSemesterOrder(b) - parseSemesterOrder(a);
@@ -463,6 +473,20 @@
     return TERMS.every((t) => existingSet.has(formatSemesterLabel(grade, t)));
   }
 
+  function removeSemesterTab(sem) {
+    state.customSemesters = state.customSemesters.filter((s) => s !== sem);
+    if (!state.hiddenSemesters.includes(sem)) {
+      state.hiddenSemesters.push(sem);
+    }
+    if (state.activeSemester === sem) {
+      state.activeSemester = '';
+    }
+    ensureActiveSemester();
+    saveCache();
+    renderSemesterTabs();
+    renderGridEvents();
+  }
+
   function renderSemesterTabs() {
     const semesters = ensureActiveSemester();
     els.semesterTabs.innerHTML = '';
@@ -473,10 +497,30 @@
       btn.className = `tt-tab${sem === state.activeSemester ? ' is-active' : ''}`;
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', sem === state.activeSemester ? 'true' : 'false');
-      btn.innerHTML = `
-        <span class="tt-cal-icon" aria-hidden="true">17</span>
-        <span>${escapeHtml(sem)}</span>
-      `;
+
+      const calIcon = document.createElement('span');
+      calIcon.className = 'tt-cal-icon';
+      calIcon.setAttribute('aria-hidden', 'true');
+      calIcon.textContent = '17';
+
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = sem;
+
+      const closeBtn = document.createElement('span');
+      closeBtn.className = 'tt-tab-close';
+      closeBtn.setAttribute('role', 'button');
+      closeBtn.setAttribute('aria-label', `${sem} 탭 삭제`);
+      closeBtn.title = `${sem} 삭제`;
+      closeBtn.textContent = '×';
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeSemesterTab(sem);
+      });
+
+      btn.appendChild(calIcon);
+      btn.appendChild(labelSpan);
+      btn.appendChild(closeBtn);
+
       btn.addEventListener('click', () => {
         state.activeSemester = sem;
         saveCache();
@@ -567,6 +611,7 @@
   function handleConfirmAddSemester() {
     if (!state.selectedGrade || !state.selectedTerm) return;
     const label = formatSemesterLabel(state.selectedGrade, state.selectedTerm);
+    state.hiddenSemesters = state.hiddenSemesters.filter((s) => s !== label);
     if (!state.customSemesters.includes(label)) {
       state.customSemesters.push(label);
     }
@@ -618,14 +663,23 @@
     });
   }
 
+  function hashCourseNameToColor(name) {
+    const key = String(name || '').trim().toLowerCase();
+    let hash = 2166136261;
+    for (let i = 0; i < key.length; i++) {
+      hash ^= key.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return Math.abs(hash) % 8;
+  }
+
   function assignColorIndices(courses) {
     const colorMap = new Map();
-    let nextIdx = 0;
     for (const c of courses) {
-      const key = c.id || c.name;
-      if (!colorMap.has(key)) {
-        colorMap.set(key, nextIdx % 8);
-        nextIdx += 1;
+      const nameKey = (c.name || '').trim();
+      const mapKey = nameKey || c.id;
+      if (!colorMap.has(mapKey)) {
+        colorMap.set(mapKey, hashCourseNameToColor(nameKey || c.id));
       }
     }
     return colorMap;
@@ -688,7 +742,7 @@
 
     for (const course of activeCourses) {
       const slots = parseCourseSlots(course);
-      const colorIdx = colorMap.get(course.id || course.name) ?? 0;
+      const colorIdx = colorMap.get((course.name || '').trim() || course.id) ?? 0;
       for (const slot of slots) {
         if (!byDay[slot.day]) continue;
         const clampedStart = Math.max(minVisible, Math.min(maxVisible, slot.startMin));
@@ -796,6 +850,7 @@
     els.courseName.value = initial.name || '';
     populateModalSemesterSelect(initial.semester || state.activeSemester);
     els.courseCategory.value = initial.category || '전공선택';
+    els.courseCredits.value = String(initial.credits || 3);
     setSelectedDaysInModal(initial.days || []);
     els.courseTime.value = initial.time || '';
     els.courseRoom.value = initial.room || '';
@@ -995,6 +1050,7 @@
       const time = els.courseTime.value.trim();
       const semester = els.courseSemester.value.trim() || state.activeSemester;
       const category = els.courseCategory.value;
+      const credits = Number(els.courseCredits.value) || 3;
       const room = els.courseRoom.value.trim();
 
       if (!name) {
@@ -1023,6 +1079,7 @@
             time,
             semester,
             category,
+            credits,
             room,
           },
           state.modalMode
@@ -1090,6 +1147,7 @@
             time: timeStr,
             semester: state.activeSemester,
             category: '전공선택',
+            credits: 3,
             room: parsed.room,
           },
           'add'

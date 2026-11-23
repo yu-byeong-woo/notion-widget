@@ -206,7 +206,7 @@ async function resolveSchema(apiKey, databaseId) {
     category: findProp(['이수구분', '구분', 'Category'], ['select', 'rich_text']),
     room: findProp(['강의실', '장소', 'Room'], ['rich_text', 'select']),
     credits: findProp(['학점', 'Credits'], ['number', 'select']),
-    status: findProp(['수강상태', '상태', 'Status'], ['select', 'status']),
+    status: findProp(['활성 상태', '수강상태', '상태', 'Status'], ['select', 'status']),
   };
 }
 
@@ -366,6 +366,7 @@ async function handlePost(req, apiKey, dbId, res) {
   }
 
   const schema = await resolveSchema(apiKey, dbId.formatted);
+  const defaultStatus = schema.status?.name === '활성 상태' ? '활성' : '수강중';
   const properties = buildWriteProperties(
     schema,
     {
@@ -376,7 +377,7 @@ async function handlePost(req, apiKey, dbId, res) {
       category: body.category || '전공선택',
       room: body.room || '',
       credits: body.credits,
-      status: body.status || '수강중',
+      status: body.status || defaultStatus,
     },
     false
   );
@@ -385,6 +386,30 @@ async function handlePost(req, apiKey, dbId, res) {
     parent: { database_id: dbId.formatted },
     properties,
   });
+
+  // Also sync to Graduation Credit DB (NOTION_DATABASE_ID) if it's a separate DB
+  const creditDb = normalizeNotionId(process.env.NOTION_DATABASE_ID);
+  if (creditDb && creditDb.clean !== dbId.clean && created?.id) {
+    try {
+      const creditsNum = Number(body.credits);
+      const creditsStr = Number.isFinite(creditsNum) && creditsNum > 0 ? String(creditsNum) : '3';
+      const creditProps = {
+        과목명: { title: [{ text: { content: name } }] },
+        학점: { select: { name: creditsStr } },
+        상태: { status: { name: '수강중' } },
+        '강의 노트': { relation: [{ id: created.id }] },
+      };
+      if (body.semester) creditProps['이수 학기'] = { select: { name: String(body.semester).trim() } };
+      if (body.category) creditProps['구분'] = { select: { name: String(body.category).trim() } };
+
+      await notionFetch(apiKey, '/pages', 'POST', {
+        parent: { database_id: creditDb.formatted },
+        properties: creditProps,
+      });
+    } catch {
+      // Non-fatal: timetable Subject DB entry already succeeded
+    }
+  }
 
   res.status(201).json({
     ok: true,
@@ -433,7 +458,10 @@ module.exports = async function handler(req, res) {
   }
 
   const apiKey = process.env.NOTION_API_KEY;
-  const rawDbId = process.env.NOTION_TIMETABLE_DB_ID || process.env.NOTION_DATABASE_ID;
+  const rawDbId =
+    process.env.NOTION_TIMETABLE_DB_ID ||
+    process.env.NOTION_SUBJECT_DATABASE_ID ||
+    process.env.NOTION_DATABASE_ID;
 
   if (!apiKey || !rawDbId) {
     res.status(500).json({
