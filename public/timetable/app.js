@@ -218,6 +218,12 @@
     return `${grade}학년 ${term}학기`;
   }
 
+  function formatShortSemester(sem) {
+    const match = String(sem || '').match(/(\d)\s*학년\s*(\d)\s*학기/);
+    if (match) return `${match[1]}-${match[2]}`;
+    return String(sem || '');
+  }
+
   function getAllSemesters() {
     const hidden = new Set(state.hiddenSemesters || []);
     const set = new Set();
@@ -420,7 +426,8 @@
       calIcon.textContent = '17';
 
       const labelSpan = document.createElement('span');
-      labelSpan.textContent = sem;
+      labelSpan.textContent = formatShortSemester(sem);
+      btn.title = sem;
 
       const closeBtn = document.createElement('span');
       closeBtn.className = 'tt-tab-close';
@@ -579,25 +586,22 @@
     });
   }
 
-  function hashCourseNameToColor(name) {
-    const key = String(name || '').trim().toLowerCase();
-    let hash = 2166136261;
-    for (let i = 0; i < key.length; i++) {
-      hash ^= key.charCodeAt(i);
-      hash = Math.imul(hash, 16777619);
-    }
-    return Math.abs(hash) % 8;
-  }
-
+  // Assign unique, non-overlapping colors per semester (same course name gets same color; different semesters can reuse palette)
   function assignColorIndices(courses) {
+    const PALETTE_SIZE = 12;
     const colorMap = new Map();
+    const uniqueNames = [];
     for (const c of courses) {
-      const nameKey = (c.name || '').trim();
-      const mapKey = nameKey || c.id;
-      if (!colorMap.has(mapKey)) {
-        colorMap.set(mapKey, hashCourseNameToColor(nameKey || c.id));
+      const nameKey = (c.name || '').trim() || c.id;
+      if (!colorMap.has(nameKey)) {
+        colorMap.set(nameKey, -1);
+        uniqueNames.push(nameKey);
       }
     }
+    uniqueNames.sort((a, b) => a.localeCompare(b, 'ko'));
+    uniqueNames.forEach((nameKey, idx) => {
+      colorMap.set(nameKey, idx % PALETTE_SIZE);
+    });
     return colorMap;
   }
 
@@ -915,6 +919,11 @@
       } else {
         closeSemesterPopover();
       }
+    });
+
+    // Prevent clicks inside popover (especially re-rendered buttons) from bubbling to document and closing it
+    els.semesterPopover.addEventListener('click', (e) => {
+      e.stopPropagation();
     });
 
     els.cancelSemesterBtn.addEventListener('click', closeSemesterPopover);

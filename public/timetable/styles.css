@@ -500,15 +500,19 @@ body {
   line-height: 1.2;
 }
 
-/* 8 Muted Dark-Mode Course Palettes matching the reference */
-.tt-color-0 { background: #5a3c5c; border-color: rgba(168, 122, 171, 0.35); } /* Plum / Purple */
-.tt-color-1 { background: #7a682c; border-color: rgba(196, 172, 88, 0.35); }  /* Olive / Mustard */
-.tt-color-2 { background: #385c45; border-color: rgba(102, 161, 124, 0.35); } /* Forest Green */
-.tt-color-3 { background: #334c6e; border-color: rgba(100, 143, 199, 0.35); } /* Navy Blue */
-.tt-color-4 { background: #7c5631; border-color: rgba(196, 142, 88, 0.35); }  /* Warm Brown */
-.tt-color-5 { background: #5b6873; border-color: rgba(145, 163, 179, 0.35); } /* Slate Gray-Blue */
-.tt-color-6 { background: #2f5b62; border-color: rgba(91, 159, 171, 0.35); }  /* Muted Teal */
-.tt-color-7 { background: #6e3d49; border-color: rgba(179, 107, 124, 0.35); } /* Muted Burgundy */
+/* 12 Distinct Muted Dark-Mode Course Palettes (zero collision per semester) */
+.tt-color-0 { background: #5a3c5c; border-color: rgba(168, 122, 171, 0.38); }  /* Plum / Purple */
+.tt-color-1 { background: #7a682c; border-color: rgba(196, 172, 88, 0.38); }   /* Olive / Mustard */
+.tt-color-2 { background: #385c45; border-color: rgba(102, 161, 124, 0.38); }  /* Forest Green */
+.tt-color-3 { background: #334c6e; border-color: rgba(100, 143, 199, 0.38); }  /* Navy Blue */
+.tt-color-4 { background: #7c5631; border-color: rgba(196, 142, 88, 0.38); }   /* Warm Brown */
+.tt-color-5 { background: #5b6873; border-color: rgba(145, 163, 179, 0.38); }  /* Slate Gray-Blue */
+.tt-color-6 { background: #2f5b62; border-color: rgba(91, 159, 171, 0.38); }   /* Muted Teal */
+.tt-color-7 { background: #6e3d49; border-color: rgba(179, 107, 124, 0.38); }  /* Muted Burgundy */
+.tt-color-8 { background: #824b33; border-color: rgba(212, 130, 95, 0.38); }   /* Terracotta / Orange */
+.tt-color-9 { background: #434273; border-color: rgba(128, 126, 201, 0.38); }  /* Muted Indigo */
+.tt-color-10 { background: #4d6338; border-color: rgba(133, 168, 99, 0.38); }  /* Moss / Sage */
+.tt-color-11 { background: #6b4660; border-color: rgba(186, 126, 168, 0.38); } /* Dusty Rose */
 
 /* Bottom Quick Input Bar */
 .tt-quick-bar {
