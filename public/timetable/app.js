@@ -143,10 +143,6 @@
     statusBanner: document.getElementById('status-banner'),
     timeCol: document.getElementById('tt-time-col'),
     daysCols: document.getElementById('tt-days-cols'),
-    quickForm: document.getElementById('quick-form'),
-    quickInput: document.getElementById('quick-input'),
-    quickRawText: document.getElementById('quick-raw-text'),
-    quickChips: document.getElementById('quick-chips'),
     modalBackdrop: document.getElementById('course-modal-backdrop'),
     modalTitle: document.getElementById('course-modal-title'),
     closeCourseModal: document.getElementById('close-course-modal'),
@@ -161,7 +157,6 @@
     courseCredits: document.getElementById('course-credits'),
     courseDaysGroup: document.getElementById('course-days-group'),
     courseTime: document.getElementById('course-time'),
-    courseRoom: document.getElementById('course-room'),
     courseFormError: document.getElementById('course-form-error'),
   };
 
@@ -364,91 +359,6 @@
     }
 
     return slots;
-  }
-
-  /* ========================================================================
-     Quick Input Bar Parser (e.g. "월 1100-1300" or "알고리즘 월 1100-1300 104호")
-     ======================================================================== */
-  function parseQuickInput(raw) {
-    const text = String(raw || '').trim();
-    if (!text) return { empty: true, name: '', slots: [], room: '' };
-
-    // Find all occurrences of: <Day> <StartTime> [-|~] <EndTime>
-    const slotRegex = /(월|화|수|목|금)\s*(\d{1,2}:?\d{2}|\d{1,2})\s*(?:~|-|–|—)\s*(\d{1,2}:?\d{2}|\d{1,2})/g;
-    const slots = [];
-    let remainder = text;
-
-    let match;
-    while ((match = slotRegex.exec(text)) !== null) {
-      const day = match[1];
-      const startMin = parseTimeToken(match[2]);
-      const endMin = parseTimeToken(match[3]);
-      if (startMin !== null && endMin !== null && endMin > startMin) {
-        slots.push({
-          day,
-          startMin,
-          endMin,
-          label: `${minutesToLabel(startMin)}~${minutesToLabel(endMin)}`,
-        });
-      }
-      remainder = remainder.replace(match[0], ' ');
-    }
-
-    // Clean punctuation left over from separating slots
-    remainder = remainder.replace(/[,/]+/g, ' ').replace(/\s+/g, ' ').trim();
-
-    // Extract optional room token like "104호", "공학관 302호", "B102호"
-    let room = '';
-    const roomMatch = remainder.match(/([A-Za-z가-힣0-9-]+호)\b/);
-    if (roomMatch) {
-      room = roomMatch[1];
-      remainder = remainder.replace(roomMatch[0], ' ').replace(/\s+/g, ' ').trim();
-    }
-
-    return {
-      empty: false,
-      name: remainder,
-      slots,
-      room,
-    };
-  }
-
-  function updateQuickPreview() {
-    const raw = els.quickInput.value.trim();
-    if (!raw) {
-      els.quickRawText.textContent = '월 1100 ~ 1300';
-      els.quickRawText.classList.add('is-placeholder');
-      els.quickChips.innerHTML = `
-        <span class="tt-quick-chip tt-quick-chip--sample">
-          <span class="tt-cal-mini" aria-hidden="true">17</span>
-          <span>월 11:00 ~ 13:00</span>
-        </span>
-      `;
-      return;
-    }
-
-    els.quickRawText.textContent = raw;
-    els.quickRawText.classList.remove('is-placeholder');
-
-    const parsed = parseQuickInput(raw);
-    const chipsHtml = [];
-
-    if (parsed.name) {
-      chipsHtml.push(`<span class="tt-quick-chip tt-quick-chip--name">${escapeHtml(parsed.name)}</span>`);
-    }
-    for (const s of parsed.slots) {
-      chipsHtml.push(`
-        <span class="tt-quick-chip">
-          <span class="tt-cal-mini" aria-hidden="true">17</span>
-          <span>${escapeHtml(s.day)} ${escapeHtml(s.label.replace('~', ' ~ '))}</span>
-        </span>
-      `);
-    }
-    if (parsed.room) {
-      chipsHtml.push(`<span class="tt-quick-chip tt-quick-chip--name">${escapeHtml(parsed.room)}</span>`);
-    }
-
-    els.quickChips.innerHTML = chipsHtml.join('');
   }
 
   function escapeHtml(str) {
@@ -859,7 +769,6 @@
     els.courseCredits.value = String(initial.credits || 3);
     setSelectedDaysInModal(initial.days || []);
     els.courseTime.value = initial.time || '';
-    els.courseRoom.value = initial.room || '';
 
     els.deleteCourseBtn.classList.toggle('hidden', mode !== 'edit');
     els.modalBackdrop.classList.remove('hidden');
@@ -1057,7 +966,6 @@
       const semester = els.courseSemester.value.trim() || state.activeSemester;
       const category = els.courseCategory.value;
       const credits = Number(els.courseCredits.value) || 3;
-      const room = els.courseRoom.value.trim();
 
       if (!name) {
         showFormError('과목명을 입력해 주세요.');
@@ -1086,7 +994,6 @@
             semester,
             category,
             credits,
-            room,
           },
           state.modalMode
         );
@@ -1113,58 +1020,6 @@
       }
     });
 
-    // Bottom Quick Input Bar
-    els.quickInput.addEventListener('input', updateQuickPreview);
-    els.quickForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const raw = els.quickInput.value.trim();
-      if (!raw) return;
-
-      const parsed = parseQuickInput(raw);
-      if (parsed.slots.length === 0) {
-        showBanner('요일과 시간을 인식할 수 없습니다. 예: 알고리즘 월 1100-1300', 'warn', 3200);
-        return;
-      }
-
-      const days = parsed.slots.map((s) => s.day);
-      const uniqueLabels = new Set(parsed.slots.map((s) => s.label));
-      const timeStr =
-        uniqueLabels.size === 1
-          ? parsed.slots[0].label
-          : parsed.slots.map((s) => s.label).join(' / ');
-
-      // If user only typed time (e.g. "월 1100-1300"), open modal pre-filled
-      if (!parsed.name) {
-        openCourseModal('add', {
-          days,
-          time: timeStr,
-          room: parsed.room,
-          semester: state.activeSemester,
-        });
-        return;
-      }
-
-      // Otherwise add immediately to current semester & Notion DB
-      try {
-        await saveCourse(
-          {
-            name: parsed.name,
-            days,
-            time: timeStr,
-            semester: state.activeSemester,
-            category: '전공선택',
-            credits: 3,
-            room: parsed.room,
-          },
-          'add'
-        );
-        els.quickInput.value = '';
-        updateQuickPreview();
-      } catch (err) {
-        showBanner(`과목 추가 실패: ${err.message}`, 'error', 4000);
-      }
-    });
-
     window.addEventListener('resize', () => {
       renderGridEvents();
     });
@@ -1176,7 +1031,6 @@
   function init() {
     buildGridSkeleton();
     bindEvents();
-    updateQuickPreview();
 
     if (IS_DEMO) {
       state.courses = DEMO_COURSES.map((c) => ({ ...c }));
