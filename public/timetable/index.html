@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>대학 시간표 위젯</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+  />
+  <link rel="stylesheet" href="/timetable/styles.css" />
+</head>
+<body>
+  <main class="tt-shell" id="tt-shell">
+    <!-- Top Header: Semester Tabs + Add Semester + Add Course -->
+    <header class="tt-header">
+      <div class="tt-tabs-wrap">
+        <div class="tt-tabs" id="semester-tabs" role="tablist" aria-label="학기 선택"></div>
+        <div class="tt-add-sem-anchor">
+          <button
+            type="button"
+            id="add-semester-btn"
+            class="tt-icon-btn tt-add-sem-btn"
+            title="새 학기 추가"
+            aria-label="새 학기 추가"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+
+          <!-- Add Semester Popover -->
+          <div id="semester-popover" class="tt-popover hidden" role="dialog" aria-label="새 학기 추가">
+            <div class="tt-popover-title">새 학기 추가</div>
+            <div class="tt-popover-group">
+              <div class="tt-popover-label">학년</div>
+              <div class="tt-pill-grid tt-pill-grid--4" id="grade-options"></div>
+            </div>
+            <div class="tt-popover-group">
+              <div class="tt-popover-label">학기</div>
+              <div class="tt-pill-grid tt-pill-grid--2" id="term-options"></div>
+            </div>
+            <div class="tt-popover-actions">
+              <button type="button" class="tt-btn tt-btn--ghost" id="cancel-semester-btn">취소</button>
+              <button type="button" class="tt-btn tt-btn--primary" id="confirm-semester-btn">추가</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tt-header-actions">
+        <button
+          type="button"
+          id="sync-btn"
+          class="tt-icon-btn tt-sync-btn"
+          title="노션 데이터 새로고침"
+          aria-label="노션 데이터 새로고침"
+        >
+          <svg class="tt-sync-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 16h5v5" />
+          </svg>
+        </button>
+
+        <button type="button" id="add-course-btn" class="tt-add-course-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          <span>과목 추가</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Status / Toast Banner (hidden unless needed) -->
+    <div id="status-banner" class="tt-banner hidden" role="status"></div>
+
+    <!-- Timetable Grid -->
+    <section class="tt-grid-wrap" aria-label="주간 시간표">
+      <div class="tt-grid-head">
+        <div class="tt-head-time"></div>
+        <div class="tt-head-day">월</div>
+        <div class="tt-head-day">화</div>
+        <div class="tt-head-day">수</div>
+        <div class="tt-head-day">목</div>
+        <div class="tt-head-day">금</div>
+      </div>
+
+      <div class="tt-grid-body" id="tt-grid-body">
+        <!-- Time labels column -->
+        <div class="tt-time-col" id="tt-time-col"></div>
+        <!-- 5 Day columns (background cells + positioned course blocks) -->
+        <div class="tt-days-cols" id="tt-days-cols"></div>
+      </div>
+    </section>
+
+    <!-- Bottom Quick Input Bar -->
+    <form class="tt-quick-bar" id="quick-form" autocomplete="off">
+      <div class="tt-quick-preview" id="quick-preview" aria-live="polite">
+        <span class="tt-quick-raw" id="quick-raw-text">월 1100 ~ 1300</span>
+        <div class="tt-quick-chips" id="quick-chips">
+          <span class="tt-quick-chip tt-quick-chip--sample">
+            <span class="tt-cal-mini" aria-hidden="true">17</span>
+            <span>월 11:00 ~ 13:00</span>
+          </span>
+        </div>
+      </div>
+      <div class="tt-quick-input-row">
+        <input
+          type="text"
+          id="quick-input"
+          class="tt-quick-input"
+          placeholder="과목명, 요일 시간을 입력하세요 (예: 알고리즘 월 1100-1300 또는 월 1100-1300)..."
+          aria-label="빠른 과목 입력"
+        />
+        <button type="submit" id="quick-submit-btn" class="tt-quick-submit" title="추가 (Enter)">
+          추가
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Add / Edit Course Modal -->
+  <div id="course-modal-backdrop" class="tt-modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="course-modal-title">
+    <div class="tt-modal">
+      <div class="tt-modal-header">
+        <h2 id="course-modal-title" class="tt-modal-title">과목 추가</h2>
+        <button type="button" id="close-course-modal" class="tt-icon-btn" aria-label="닫기">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="course-form" class="tt-modal-form">
+        <input type="hidden" id="course-id" />
+
+        <div class="tt-field">
+          <label for="course-name">과목명 <span class="tt-req">*</span></label>
+          <input type="text" id="course-name" required placeholder="예: 오픈소스SW응용" />
+        </div>
+
+        <div class="tt-field-row">
+          <div class="tt-field">
+            <label for="course-semester">학기</label>
+            <select id="course-semester"></select>
+          </div>
+          <div class="tt-field">
+            <label for="course-category">이수구분</label>
+            <select id="course-category">
+              <option value="전공필수">전공필수</option>
+              <option value="전공선택">전공선택</option>
+              <option value="교양">교양</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tt-field">
+          <label>요일 <span class="tt-req">*</span></label>
+          <div class="tt-day-toggles" id="course-days-group">
+            <button type="button" class="tt-day-toggle" data-day="월">월</button>
+            <button type="button" class="tt-day-toggle" data-day="화">화</button>
+            <button type="button" class="tt-day-toggle" data-day="수">수</button>
+            <button type="button" class="tt-day-toggle" data-day="목">목</button>
+            <button type="button" class="tt-day-toggle" data-day="금">금</button>
+          </div>
+        </div>
+
+        <div class="tt-field">
+          <label for="course-time">시간 <span class="tt-req">*</span></label>
+          <input
+            type="text"
+            id="course-time"
+            required
+            placeholder="예: 13:00-15:00 또는 09:00~11:00 / 09:00~10:00"
+          />
+          <p class="tt-field-hint">요일이 2개 이상이고 시간이 다르면 <code>/</code>로 구분해 입력합니다.</p>
+        </div>
+
+        <div class="tt-field">
+          <label for="course-room">강의실 (선택)</label>
+          <input type="text" id="course-room" placeholder="예: 104호" />
+        </div>
+
+        <div id="course-form-error" class="tt-form-error hidden"></div>
+
+        <div class="tt-modal-footer">
+          <button type="button" id="delete-course-btn" class="tt-btn tt-btn--danger hidden">삭제</button>
+          <div class="tt-modal-footer-right">
+            <button type="button" id="cancel-course-btn" class="tt-btn tt-btn--ghost">취소</button>
+            <button type="submit" id="save-course-btn" class="tt-btn tt-btn--primary">저장</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/timetable/app.js"></script>
+</body>
+</html>

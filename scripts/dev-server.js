@@ -18,6 +18,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const creditsHandler = require('../api/credits');
+const timetableHandler = require('../api/timetable');
 const publicDir = path.join(__dirname, '..', 'public');
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -30,23 +31,39 @@ const MIME = {
   '.png': 'image/png',
 };
 
+function attachResHelpers(res) {
+  res.status = (code) => {
+    res.statusCode = code;
+    return res;
+  };
+  res.json = (obj) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(JSON.stringify(obj));
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   const urlObj = new URL(req.url, `http://localhost:${PORT}`);
 
   if (urlObj.pathname === '/api/credits') {
-    res.status = (code) => {
-      res.statusCode = code;
-      return res;
-    };
-    res.json = (obj) => {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.end(JSON.stringify(obj));
-    };
+    attachResHelpers(res);
     await creditsHandler(req, res);
     return;
   }
 
-  let filePath = path.join(publicDir, urlObj.pathname === '/' ? 'index.html' : urlObj.pathname);
+  if (urlObj.pathname === '/api/timetable') {
+    attachResHelpers(res);
+    await timetableHandler(req, res);
+    return;
+  }
+
+  let relPath = urlObj.pathname === '/' ? 'graduation-credits/index.html' : urlObj.pathname.replace(/^\/+/, '');
+  let filePath = path.join(publicDir, relPath);
+
+  if (filePath.startsWith(publicDir) && fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(filePath, 'index.html');
+  }
+
   if (!filePath.startsWith(publicDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
     res.statusCode = 404;
     res.end('Not Found');
@@ -60,6 +77,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Preview server running at http://localhost:${PORT}`);
-  console.log(`Demo (Dark):  http://localhost:${PORT}/?demo=1&theme=dark`);
-  console.log(`Demo (Light): http://localhost:${PORT}/?demo=1&theme=light`);
+  console.log(`Credit Tracker (Demo): http://localhost:${PORT}/?demo=1&theme=dark`);
+  console.log(`Timetable (Demo):      http://localhost:${PORT}/timetable?demo=1`);
 });

@@ -1,5 +1,27 @@
 {
   "version": 2,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/graduation-credits/index.html"
+    },
+    {
+      "source": "/graduation-credits",
+      "destination": "/graduation-credits/index.html"
+    },
+    {
+      "source": "/graduation-credits/",
+      "destination": "/graduation-credits/index.html"
+    },
+    {
+      "source": "/timetable",
+      "destination": "/timetable/index.html"
+    },
+    {
+      "source": "/timetable/",
+      "destination": "/timetable/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -10,7 +32,7 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
+          "value": "GET, POST, PATCH, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
