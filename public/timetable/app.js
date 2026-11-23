@@ -1186,6 +1186,13 @@
       return;
     }
 
+    if (!WIDGET_KEY) {
+      renderSemesterTabs();
+      renderGridEvents();
+      showBanner('노션 연동이 필요합니다. /connect 에서 본인 노션과 연결해 전용 임베드 링크(?k=...)를 발급받아 주세요.', 'warn');
+      return;
+    }
+
     // 1. Instant 0.01s render from localStorage cache
     const cached = loadJson(CACHE_KEY, null);
     if (cached && Array.isArray(cached.courses) && cached.courses.length > 0) {

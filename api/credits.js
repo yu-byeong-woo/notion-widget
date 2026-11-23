@@ -303,24 +303,27 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  let apiKey = process.env.NOTION_API_KEY;
-  let rawDbId = process.env.NOTION_DATABASE_ID;
-  let subjectDbRaw = process.env.NOTION_SUBJECT_DATABASE_ID || '';
-
   const widgetKey = extractWidgetKey(req);
-  if (widgetKey) {
-    const decoded = decryptPayload(widgetKey);
-    if (!decoded || !decoded.t || !decoded.d) {
-      res.status(401).json({
-        error: '유효하지 않은 위젯 링크입니다. /connect 에서 다시 연동해 주세요.',
-        code: 'INVALID_WIDGET_KEY',
-      });
-      return;
-    }
-    apiKey = decoded.t;
-    rawDbId = decoded.d;
-    subjectDbRaw = decoded.s || '';
+  if (!widgetKey) {
+    res.status(401).json({
+      error: '노션 연동이 필요합니다. /connect 에서 전용 임베드 링크를 발급받아 주세요.',
+      code: 'WIDGET_KEY_REQUIRED',
+    });
+    return;
   }
+
+  const decoded = decryptPayload(widgetKey);
+  if (!decoded || !decoded.t || !decoded.d) {
+    res.status(401).json({
+      error: '유효하지 않은 위젯 링크입니다. /connect 에서 다시 연동해 주세요.',
+      code: 'INVALID_WIDGET_KEY',
+    });
+    return;
+  }
+
+  const apiKey = decoded.t;
+  const rawDbId = decoded.d;
+  const subjectDbRaw = decoded.s || '';
 
   if (!apiKey || !rawDbId) {
     res.status(500).json({

@@ -555,6 +555,13 @@
       return;
     }
 
+    if (!WIDGET_KEY) {
+      setSyncing(false, '연동 필요');
+      showBanner('노션 연동이 필요합니다. /connect 페이지에서 전용 임베드 링크를 발급받아 접속해 주세요.');
+      el.tbody.innerHTML = `<tr class="empty-row"><td class="empty-cell" colspan="5">노션 연동이 필요합니다. <a href="/connect" style="color:inherit;text-decoration:underline;">/connect</a> 에서 전용 링크를 생성해 주세요.</td></tr>`;
+      return;
+    }
+
     const cached = readCache();
     if (cached) {
       renderAll(cached);
