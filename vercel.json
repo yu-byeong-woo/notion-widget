@@ -20,6 +20,26 @@
     {
       "source": "/timetable/",
       "destination": "/timetable/index.html"
+    },
+    {
+      "source": "/connect",
+      "destination": "/connect/index.html"
+    },
+    {
+      "source": "/connect/",
+      "destination": "/connect/index.html"
+    },
+    {
+      "source": "/api/oauth/start",
+      "destination": "/api/oauth?action=start"
+    },
+    {
+      "source": "/api/oauth/callback",
+      "destination": "/api/oauth?action=callback"
+    },
+    {
+      "source": "/api/oauth/mint",
+      "destination": "/api/oauth?action=mint"
     }
   ],
   "headers": [

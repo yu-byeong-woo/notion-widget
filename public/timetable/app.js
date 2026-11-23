@@ -9,13 +9,19 @@
   const TERMS = [1, 2];
   const TOTAL_STANDARD_SEMESTERS = GRADES.length * TERMS.length; // 8
 
-  const CACHE_KEY = 'notion_timetable_widget_cache_v2';
-  const CUSTOM_SEMS_KEY = 'notion_timetable_custom_semesters_v1';
-  const HIDDEN_SEMS_KEY = 'notion_timetable_hidden_semesters_v1';
-  const ACTIVE_SEM_KEY = 'notion_timetable_active_semester_v1';
-
   const urlParams = new URLSearchParams(window.location.search);
   const IS_DEMO = urlParams.get('demo') === '1';
+  const WIDGET_KEY = urlParams.get('k') || '';
+  const KEY_SUFFIX = WIDGET_KEY ? `_${WIDGET_KEY.slice(-12)}` : '';
+
+  const CACHE_KEY = `notion_timetable_widget_cache_v2${KEY_SUFFIX}`;
+  const CUSTOM_SEMS_KEY = `notion_timetable_custom_semesters_v1${KEY_SUFFIX}`;
+  const HIDDEN_SEMS_KEY = `notion_timetable_hidden_semesters_v1${KEY_SUFFIX}`;
+  const ACTIVE_SEM_KEY = `notion_timetable_active_semester_v1${KEY_SUFFIX}`;
+
+  function getTimetableApiUrl() {
+    return WIDGET_KEY ? `/api/timetable?k=${encodeURIComponent(WIDGET_KEY)}` : '/api/timetable';
+  }
 
   // Exact sample data matching the reference screenshot for ?demo=1 preview
   const DEMO_COURSES = [
@@ -894,7 +900,7 @@
     }
 
     const method = mode === 'edit' ? 'PATCH' : 'POST';
-    const res = await fetch('/api/timetable', {
+    const res = await fetch(getTimetableApiUrl(), {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -928,7 +934,7 @@
       return;
     }
 
-    const res = await fetch('/api/timetable', {
+    const res = await fetch(getTimetableApiUrl(), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, archived: true }),
@@ -962,7 +968,7 @@
     els.syncBtn.classList.add('is-syncing');
 
     try {
-      const res = await fetch('/api/timetable', { cache: 'no-store' });
+      const res = await fetch(getTimetableApiUrl(), { cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (!silent || state.courses.length === 0) {

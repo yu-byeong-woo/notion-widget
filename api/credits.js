@@ -1,3 +1,5 @@
+const { decryptPayload, extractWidgetKey } = require('./_crypto');
+
 const GRADUATION_GOAL = 136;
 const NOTION_API_VERSION = '2022-06-28';
 
@@ -209,7 +211,7 @@ async function handleGet(apiKey, dbId, res) {
   });
 }
 
-async function handlePost(req, apiKey, dbId, res) {
+async function handlePost(req, apiKey, dbId, subjectDbRaw, res) {
   let body;
   try {
     body = await readJsonBody(req);
@@ -235,7 +237,7 @@ async function handlePost(req, apiKey, dbId, res) {
   let subjectWarning = null;
 
   if (linkToSubject) {
-    const subjectDb = normalizeNotionId(process.env.NOTION_SUBJECT_DATABASE_ID);
+    const subjectDb = normalizeNotionId(subjectDbRaw);
     if (subjectDb) {
       const subjectProps = {
         이름: { title: [{ text: { content: name } }] },
@@ -301,8 +303,24 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.NOTION_API_KEY;
-  const rawDbId = process.env.NOTION_DATABASE_ID;
+  let apiKey = process.env.NOTION_API_KEY;
+  let rawDbId = process.env.NOTION_DATABASE_ID;
+  let subjectDbRaw = process.env.NOTION_SUBJECT_DATABASE_ID || '';
+
+  const widgetKey = extractWidgetKey(req);
+  if (widgetKey) {
+    const decoded = decryptPayload(widgetKey);
+    if (!decoded || !decoded.t || !decoded.d) {
+      res.status(401).json({
+        error: '유효하지 않은 위젯 링크입니다. /connect 에서 다시 연동해 주세요.',
+        code: 'INVALID_WIDGET_KEY',
+      });
+      return;
+    }
+    apiKey = decoded.t;
+    rawDbId = decoded.d;
+    subjectDbRaw = decoded.s || '';
+  }
 
   if (!apiKey || !rawDbId) {
     res.status(500).json({
@@ -327,7 +345,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (req.method === 'POST') {
-      await handlePost(req, apiKey, dbId, res);
+      await handlePost(req, apiKey, dbId, subjectDbRaw, res);
       return;
     }
     res.status(405).json({ error: 'Method Not Allowed' });

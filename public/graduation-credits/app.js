@@ -1,8 +1,20 @@
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'notion_credit_tracker_v1';
+  const WIDGET_KEY = new URLSearchParams(window.location.search).get('k') || '';
+  const KEY_SUFFIX = WIDGET_KEY ? `_${WIDGET_KEY.slice(-12)}` : '';
+  const STORAGE_KEY = `notion_credit_tracker_v1${KEY_SUFFIX}`;
   const GRADUATION_GOAL = 136;
+
+  function buildCreditsApiUrl(extraParams = {}) {
+    const qs = new URLSearchParams();
+    if (WIDGET_KEY) qs.set('k', WIDGET_KEY);
+    for (const [k, v] of Object.entries(extraParams)) {
+      if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+    }
+    const str = qs.toString();
+    return str ? `/api/credits?${str}` : '/api/credits';
+  }
 
   const state = {
     data: null,
@@ -435,7 +447,7 @@
     };
 
     try {
-      const response = await fetch('/api/credits', {
+      const response = await fetch(buildCreditsApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -501,7 +513,7 @@
     setSyncing(true);
 
     try {
-      const url = manual ? `/api/credits?t=${Date.now()}` : '/api/credits';
+      const url = manual ? buildCreditsApiUrl({ t: Date.now() }) : buildCreditsApiUrl();
       const response = await fetch(url, { cache: 'no-store' });
       const payload = await response.json();
 

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>노션 위젯 연동하기</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+  />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #191919;
+      color: rgba(255, 255, 255, 0.92);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 540px;
+      background: #202020;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.16);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      color: #93c5fd;
+      font-size: 12px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    p.sub {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 13.5px;
+    }
+    .btn-notion {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: 44px;
+      padding: 0 20px;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #191919;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+    .btn-notion:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-primary {
+      height: 40px;
+      padding: 0 18px;
+      border-radius: 9px;
+      border: none;
+      background: #2563eb;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover:not(:disabled) { background: #3b82f6; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.78);
+    }
+    select {
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: #171717;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+    select:focus { border-color: #60a5fa; }
+    .alert {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fecaca;
+    }
+    .alert.info {
+      border-color: rgba(74, 222, 128, 0.35);
+      background: rgba(34, 197, 94, 0.12);
+      color: #bbf7d0;
+    }
+    .result-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #171717;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .url-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .url-input {
+      flex: 1;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: #222222;
+      color: rgba(255, 255, 255, 0.86);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11.5px;
+    }
+    .btn-copy {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-copy:hover { background: rgba(255, 255, 255, 0.15); }
+    .hidden { display: none !important; }
+    .steps {
+      margin: 0;
+      padding-left: 18px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 12.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="badge">Notion Widget Connect</div>
+    <div>
+      <h1>내 노션과 시간표 · 학점 위젯 연결하기</h1>
+      <p class="sub" style="margin-top:6px;">
+        노션 계정으로 로그인해 사용할 데이터베이스를 선택하면, 내 노션에만 연동되는 전용 임베드 링크가 즉시 생성됩니다.
+      </p>
+    </div>
+
+    <div id="error-box" class="alert hidden"></div>
+
+    <!-- Step 1: Connect Button -->
+    <section id="step-connect" style="display:flex; flex-direction:column; gap:14px;">
+      <a href="/api/oauth/start" class="btn-notion">
+        <span>Notion으로 연결하기</span>
+      </a>
+      <ol class="steps">
+        <li>버튼을 누르고 노션에서 <strong>페이지 선택</strong>을 클릭하세요.</li>
+        <li><strong>시간표(강의 목록) DB</strong>와 <strong>이수 과목 DB</strong>가 포함된 페이지에 접근을 허용하세요.</li>
+        <li>돌아온 화면에서 DB를 선택하면 전용 임베드 링크가 발급됩니다.</li>
+      </ol>
+    </section>
+
+    <!-- Step 2: Pick Databases -->
+    <section id="step-pick" class="hidden" style="display:flex; flex-direction:column; gap:14px;">
+      <div id="ws-info" class="alert info"></div>
+
+      <div class="field">
+        <label for="timetable-db">시간표 데이터베이스 (강의 목록 / Subject DB)</label>
+        <select id="timetable-db"></select>
+      </div>
+
+      <div class="field">
+        <label for="credits-db">졸업 학점 데이터베이스 (이수 과목 DB · 선택)</label>
+        <select id="credits-db"></select>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="button" id="mint-btn" class="btn-primary" style="flex:1;">전용 임베드 링크 생성</button>
+        <a href="/api/oauth/start" class="btn-copy" style="display:inline-flex;align-items:center;text-decoration:none;height:40px;">다시 연결</a>
+      </div>
+    </section>
+
+    <!-- Step 3: Generated Embed Links -->
+    <section id="step-result" class="result-box hidden">
+      <div style="font-weight:700; font-size:13.5px;">전용 임베드 링크가 생성되었습니다!</div>
+      <p class="sub">아래 링크를 복사해 노션 페이지에서 <code>/embed</code>로 붙여넣으세요.</p>
+
+      <div id="timetable-url-wrap" class="field hidden">
+        <label>시간표 위젯 임베드 링크</label>
+        <div class="url-row">
+          <input type="text" id="timetable-url" class="url-input" readonly />
+          <button type="button" class="btn-copy" data-copy="timetable-url">복사</button>
+        </div>
+      </div>
+
+      <div id="credits-url-wrap" class="field hidden">
+        <label>졸업 학점 트래커 임베드 링크</label>
+        <div class="url-row">
+          <input type="text" id="credits-url" class="url-input" readonly />
+          <button type="button" class="btn-copy" data-copy="credits-url">복사</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const errorBox = document.getElementById('error-box');
+      const stepConnect = document.getElementById('step-connect');
+      const stepPick = document.getElementById('step-pick');
+      const stepResult = document.getElementById('step-result');
+      const wsInfo = document.getElementById('ws-info');
+      const timetableSelect = document.getElementById('timetable-db');
+      const creditsSelect = document.getElementById('credits-db');
+      const mintBtn = document.getElementById('mint-btn');
+
+      let sessionToken = '';
+
+      function showError(msg) {
+        if (!msg) {
+          errorBox.classList.add('hidden');
+          return;
+        }
+        errorBox.textContent = msg;
+        errorBox.classList.remove('hidden');
+      }
+
+      function decodeBase64Url(str) {
+        const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        const pad = b64.length % 4 ? '='.repeat(4 - (b64.length % 4)) : '';
+        const bin = atob(b64 + pad);
+        const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+      }
+
+      function populateSelect(selectEl, dbs, placeholder, matchRegex) {
+        selectEl.innerHTML = '';
+        const noneOpt = document.createElement('option');
+        noneOpt.value = '';
+        noneOpt.textContent = placeholder;
+        selectEl.appendChild(noneOpt);
+
+        let autoMatchedId = '';
+        for (const db of dbs) {
+          const opt = document.createElement('option');
+          opt.value = db.id;
+          opt.textContent = db.title;
+          selectEl.appendChild(opt);
+          if (!autoMatchedId && matchRegex.test(db.title)) {
+            autoMatchedId = db.id;
+          }
+        }
+        if (autoMatchedId) selectEl.value = autoMatchedId;
+      }
+
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash) {
+        const params = new URLSearchParams(hash);
+        const err = params.get('error');
+        if (err) {
+          showError(err);
+        }
+
+        const s = params.get('s');
+        const ws = params.get('ws') || 'Notion Workspace';
+        const dbsRaw = params.get('dbs');
+
+        if (s && dbsRaw) {
+          try {
+            sessionToken = s;
+            const dbs = JSON.parse(decodeBase64Url(dbsRaw));
+            wsInfo.textContent = `연결 완료: ${ws} (허용된 데이터베이스 ${dbs.length}개)`;
+            populateSelect(timetableSelect, dbs, '-- 선택 안 함 --', /subject|강의|시간표/i);
+            populateSelect(creditsSelect, dbs, '-- 선택 안 함 --', /이수|학점|credit/i);
+            stepConnect.classList.add('hidden');
+            stepPick.classList.remove('hidden');
+          } catch (e) {
+            showError('연동 데이터를 읽는 중 오류가 발생했습니다. 다시 연결해 주세요.');
+          }
+        }
+      }
+
+      mintBtn.addEventListener('click', async () => {
+        showError('');
+        const timetableDbId = timetableSelect.value;
+        const creditsDbId = creditsSelect.value;
+        if (!timetableDbId && !creditsDbId) {
+          showError('시간표 DB 또는 졸업 학점 DB 중 최소 하나를 선택해 주세요.');
+          return;
+        }
+
+        mintBtn.disabled = true;
+        mintBtn.textContent = '생성 중...';
+
+        try {
+          const res = await fetch('/api/oauth/mint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session: sessionToken, timetableDbId, creditsDbId }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '링크 생성 실패');
+
+          document.getElementById('timetable-url-wrap').classList.toggle('hidden', !data.timetableUrl);
+          if (data.timetableUrl) document.getElementById('timetable-url').value = data.timetableUrl;
+
+          document.getElementById('credits-url-wrap').classList.toggle('hidden', !data.creditsUrl);
+          if (data.creditsUrl) document.getElementById('credits-url').value = data.creditsUrl;
+
+          stepResult.classList.remove('hidden');
+        } catch (e) {
+          showError(e.message);
+        } finally {
+          mintBtn.disabled = false;
+          mintBtn.textContent = '전용 임베드 링크 생성';
+        }
+      });
+
+      document.querySelectorAll('[data-copy]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const input = document.getElementById(btn.getAttribute('data-copy'));
+          if (!input) return;
+          try {
+            await navigator.clipboard.writeText(input.value);
+            const old = btn.textContent;
+            btn.textContent = '복사됨!';
+            setTimeout(() => { btn.textContent = old; }, 1400);
+          } catch {
+            input.select();
+            document.execCommand('copy');
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

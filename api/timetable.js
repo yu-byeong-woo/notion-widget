@@ -1,3 +1,5 @@
+const { decryptPayload, extractWidgetKey } = require('./_crypto');
+
 const NOTION_API_VERSION = '2022-06-28';
 
 function normalizeNotionId(raw) {
@@ -350,7 +352,7 @@ async function handleGet(apiKey, dbId, res) {
   });
 }
 
-async function handlePost(req, apiKey, dbId, res) {
+async function handlePost(req, apiKey, dbId, creditDbRaw, res) {
   let body;
   try {
     body = await readJsonBody(req);
@@ -387,8 +389,8 @@ async function handlePost(req, apiKey, dbId, res) {
     properties,
   });
 
-  // Also sync to Graduation Credit DB (NOTION_DATABASE_ID) if it's a separate DB
-  const creditDb = normalizeNotionId(process.env.NOTION_DATABASE_ID);
+  // Also sync to Graduation Credit DB if configured and different from Timetable DB
+  const creditDb = normalizeNotionId(creditDbRaw);
   if (creditDb && creditDb.clean !== dbId.clean && created?.id) {
     try {
       const creditsNum = Number(body.credits);
@@ -457,11 +459,27 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.NOTION_API_KEY;
-  const rawDbId =
+  let apiKey = process.env.NOTION_API_KEY;
+  let rawDbId =
     process.env.NOTION_TIMETABLE_DB_ID ||
     process.env.NOTION_SUBJECT_DATABASE_ID ||
     process.env.NOTION_DATABASE_ID;
+  let creditDbRaw = process.env.NOTION_DATABASE_ID || '';
+
+  const widgetKey = extractWidgetKey(req);
+  if (widgetKey) {
+    const decoded = decryptPayload(widgetKey);
+    if (!decoded || !decoded.t || !decoded.d) {
+      res.status(401).json({
+        error: '유효하지 않은 위젯 링크입니다. /connect 에서 다시 연동해 주세요.',
+        code: 'INVALID_WIDGET_KEY',
+      });
+      return;
+    }
+    apiKey = decoded.t;
+    rawDbId = decoded.d;
+    creditDbRaw = decoded.c || '';
+  }
 
   if (!apiKey || !rawDbId) {
     res.status(500).json({
@@ -486,7 +504,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (req.method === 'POST') {
-      await handlePost(req, apiKey, dbId, res);
+      await handlePost(req, apiKey, dbId, creditDbRaw, res);
       return;
     }
     if (req.method === 'PATCH') {
