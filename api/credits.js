@@ -72,6 +72,7 @@ function normalizeCategoryKey(categoryName) {
   if (compact === '전공필수') return '전공필수';
   if (compact === '전공선택') return '전공선택';
   if (compact === '교양') return '교양';
+  if (compact === '일반선택' || compact === '일반') return '일반선택';
   return categoryName || '';
 }
 
@@ -297,6 +298,74 @@ async function handlePost(req, apiKey, dbId, subjectDbRaw, res) {
   });
 }
 
+async function handleDelete(req, apiKey, res) {
+  let body = {};
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    body = {};
+  }
+
+  let rawId = body?.id || (req.query && req.query.id) || '';
+  if (!rawId) {
+    try {
+      const urlObj = new URL(req.url, 'http://localhost');
+      rawId = urlObj.searchParams.get('id') || '';
+    } catch {
+      // ignore URL parse error
+    }
+  }
+
+  const courseId = normalizeNotionId(rawId);
+  if (!courseId) {
+    res.status(400).json({ error: '삭제할 과목 ID가 올바르지 않습니다.', code: 'INVALID_COURSE_ID' });
+    return;
+  }
+
+  // 1. Inspect linked relation pages (e.g. '강의 노트' -> Subject DB) before archiving
+  const linkedIds = new Set();
+  try {
+    const page = await notionFetch(apiKey, `/pages/${courseId.formatted}`, 'GET');
+    const props = page?.properties || {};
+    const primaryRel = props['강의 노트'];
+    const relationProps = primaryRel && primaryRel.type === 'relation'
+      ? [primaryRel]
+      : Object.values(props).filter((p) => p && p.type === 'relation');
+
+    for (const relProp of relationProps) {
+      if (Array.isArray(relProp.relation)) {
+        for (const item of relProp.relation) {
+          if (item && item.id) linkedIds.add(item.id);
+        }
+      }
+    }
+  } catch {
+    // Non-fatal: proceed to archive the course page itself
+  }
+
+  // 2. Archive linked Subject DB pages first
+  let deletedLinkedCount = 0;
+  const warnings = [];
+  for (const relId of linkedIds) {
+    try {
+      await notionFetch(apiKey, `/pages/${relId}`, 'PATCH', { archived: true });
+      deletedLinkedCount += 1;
+    } catch (err) {
+      warnings.push(`연결된 과목 페이지 삭제 건너뜀: ${err.message}`);
+    }
+  }
+
+  // 3. Archive the course page itself
+  await notionFetch(apiKey, `/pages/${courseId.formatted}`, 'PATCH', { archived: true });
+
+  res.status(200).json({
+    ok: true,
+    deletedId: courseId.formatted,
+    deletedLinkedCount,
+    warning: warnings.length > 0 ? warnings.join(' / ') : null,
+  });
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -349,6 +418,10 @@ module.exports = async function handler(req, res) {
     }
     if (req.method === 'POST') {
       await handlePost(req, apiKey, dbId, subjectDbRaw, res);
+      return;
+    }
+    if (req.method === 'DELETE') {
+      await handleDelete(req, apiKey, res);
       return;
     }
     res.status(405).json({ error: 'Method Not Allowed' });

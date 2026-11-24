@@ -3,55 +3,57 @@
    ========================================================================== */
 :root,
 :root[data-theme="dark"] {
-  --text-primary: rgba(255, 255, 255, 0.94);
-  --text-secondary: rgba(255, 255, 255, 0.68);
-  --text-muted: rgba(255, 255, 255, 0.44);
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.62);
+  --text-muted: rgba(255, 255, 255, 0.42);
 
-  --shell-border: rgba(255, 255, 255, 0.22);
-  --shell-dot: rgba(255, 255, 255, 0.055);
-  --shell-bg: transparent;
+  --shell-border: rgba(255, 255, 255, 0.11);
+  --shell-bg: rgba(25, 25, 25, 0.92);
 
-  --panel-bg: rgba(255, 255, 255, 0.035);
-  --panel-border: rgba(255, 255, 255, 0.11);
-  --divider: rgba(255, 255, 255, 0.085);
-  --row-hover: rgba(255, 255, 255, 0.04);
+  --panel-bg: rgba(255, 255, 255, 0.025);
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --divider: rgba(255, 255, 255, 0.075);
+  --row-hover: rgba(255, 255, 255, 0.035);
 
-  /* Progress Bar */
-  --track-bg: rgba(0, 0, 0, 0.28);
-  --track-border: rgba(56, 217, 245, 0.36);
-  --track-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45);
-  --fill-gradient: linear-gradient(90deg, #5ef2ff 0%, #2ad4ee 55%, #12b8d4 100%);
-  --fill-glow: 0 0 14px rgba(56, 232, 255, 0.65), 0 0 4px rgba(94, 242, 255, 0.9);
-  --fill-inprogress: rgba(74, 222, 128, 0.24);
+  /* Progress Bar - Soft & Muted */
+  --track-bg: rgba(255, 255, 255, 0.06);
+  --track-border: rgba(255, 255, 255, 0.08);
+  --track-shadow: none;
+  --fill-gradient: linear-gradient(90deg, rgba(125, 211, 252, 0.72) 0%, rgba(103, 232, 249, 0.68) 100%);
+  --fill-glow: none;
+  --fill-inprogress: rgba(134, 239, 172, 0.2);
 
-  /* Summary Cards */
-  --card-goal-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.025) 100%);
-  --card-goal-border: rgba(255, 255, 255, 0.22);
-  --card-goal-text: #ffffff;
-  --card-goal-label: rgba(255, 255, 255, 0.78);
+  /* Summary Cards - Softer, pastel-tinted Notion dark aesthetic */
+  --card-goal-bg: rgba(255, 255, 255, 0.025);
+  --card-goal-border: rgba(255, 255, 255, 0.1);
+  --card-goal-active-border: rgba(255, 255, 255, 0.28);
+  --card-goal-text: rgba(255, 255, 255, 0.92);
+  --card-goal-label: rgba(255, 255, 255, 0.62);
 
-  --card-completed-bg: linear-gradient(180deg, rgba(34, 211, 238, 0.12) 0%, rgba(34, 211, 238, 0.04) 100%);
-  --card-completed-border: rgba(56, 217, 245, 0.5);
-  --card-completed-text: #45e2ff;
-  --card-completed-icon: #38d9f5;
+  --card-completed-bg: rgba(125, 211, 252, 0.035);
+  --card-completed-border: rgba(125, 211, 252, 0.2);
+  --card-completed-active-border: rgba(125, 211, 252, 0.48);
+  --card-completed-text: #8ad8f8;
+  --card-completed-icon: rgba(125, 211, 252, 0.85);
 
-  --card-remaining-bg: linear-gradient(180deg, rgba(245, 158, 11, 0.13) 0%, rgba(245, 158, 11, 0.04) 100%);
-  --card-remaining-border: rgba(245, 158, 11, 0.52);
-  --card-remaining-text: #f59e0b;
-  --card-remaining-icon: #fbbf24;
+  --card-remaining-bg: rgba(251, 191, 36, 0.032);
+  --card-remaining-border: rgba(251, 191, 36, 0.18);
+  --card-remaining-text: #efc778;
+  --card-remaining-icon: rgba(251, 191, 36, 0.82);
 
-  --card-inprogress-bg: linear-gradient(180deg, rgba(74, 222, 128, 0.12) 0%, rgba(74, 222, 128, 0.04) 100%);
-  --card-inprogress-border: rgba(74, 222, 128, 0.48);
-  --card-inprogress-text: #4ade80;
-  --card-inprogress-icon: #4ade80;
+  --card-inprogress-bg: rgba(134, 239, 172, 0.035);
+  --card-inprogress-border: rgba(134, 239, 172, 0.2);
+  --card-inprogress-active-border: rgba(134, 239, 172, 0.48);
+  --card-inprogress-text: #8ce5ae;
+  --card-inprogress-icon: rgba(134, 239, 172, 0.85);
 
-  /* Buttons & Tabs */
-  --tab-active-text: #ffffff;
-  --tab-active-line: #ffffff;
-  --add-btn-bg: rgba(59, 130, 246, 0.12);
-  --add-btn-border: rgba(96, 165, 250, 0.36);
-  --add-btn-text: #7cc4fa;
-  --add-btn-hover-bg: rgba(59, 130, 246, 0.22);
+  /* Buttons & Tabs - Minimal Notion Dark */
+  --tab-active-text: rgba(255, 255, 255, 0.94);
+  --tab-active-line: rgba(255, 255, 255, 0.85);
+  --add-btn-bg: rgba(255, 255, 255, 0.04);
+  --add-btn-border: rgba(255, 255, 255, 0.13);
+  --add-btn-text: rgba(255, 255, 255, 0.78);
+  --add-btn-hover-bg: rgba(255, 255, 255, 0.09);
 
   /* Notion-like Pills (Dark) */
   --pill-blue-bg: rgba(59, 130, 246, 0.22);
@@ -100,23 +102,26 @@
   --fill-inprogress: rgba(34, 197, 94, 0.25);
 
   /* Summary Cards */
-  --card-goal-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.035) 0%, rgba(15, 23, 42, 0.015) 100%);
-  --card-goal-border: rgba(15, 23, 42, 0.16);
+  --card-goal-bg: rgba(15, 23, 42, 0.025);
+  --card-goal-border: rgba(15, 23, 42, 0.14);
+  --card-goal-active-border: rgba(15, 23, 42, 0.36);
   --card-goal-text: #111827;
-  --card-goal-label: rgba(55, 53, 47, 0.8);
+  --card-goal-label: rgba(55, 53, 47, 0.78);
 
-  --card-completed-bg: linear-gradient(180deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.035) 100%);
-  --card-completed-border: rgba(8, 145, 178, 0.36);
+  --card-completed-bg: rgba(14, 165, 233, 0.05);
+  --card-completed-border: rgba(14, 165, 233, 0.24);
+  --card-completed-active-border: rgba(2, 132, 199, 0.55);
   --card-completed-text: #0284c7;
   --card-completed-icon: #0891b2;
 
-  --card-remaining-bg: linear-gradient(180deg, rgba(245, 158, 11, 0.11) 0%, rgba(245, 158, 11, 0.035) 100%);
-  --card-remaining-border: rgba(217, 119, 6, 0.36);
+  --card-remaining-bg: rgba(245, 158, 11, 0.05);
+  --card-remaining-border: rgba(217, 119, 6, 0.24);
   --card-remaining-text: #d97706;
   --card-remaining-icon: #d97706;
 
-  --card-inprogress-bg: linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.035) 100%);
-  --card-inprogress-border: rgba(22, 163, 74, 0.36);
+  --card-inprogress-bg: rgba(34, 197, 94, 0.05);
+  --card-inprogress-border: rgba(22, 163, 74, 0.24);
+  --card-inprogress-active-border: rgba(22, 163, 74, 0.55);
   --card-inprogress-text: #16a34a;
   --card-inprogress-icon: #16a34a;
 
@@ -185,15 +190,13 @@ body {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 24px 26px 26px;
-  border-radius: 18px;
+  padding: 22px 24px 24px;
+  border-radius: 14px;
   border: 1px solid var(--shell-border);
   background-color: var(--shell-bg);
-  background-image: radial-gradient(var(--shell-dot) 1px, transparent 1px);
-  background-size: 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 /* ==========================================================================
@@ -204,6 +207,17 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-add-btn {
+  margin-bottom: 0 !important;
 }
 
 .tracker-title-group {
@@ -287,13 +301,13 @@ body {
    Progress Card
    ========================================================================== */
 .progress-card {
-  padding: 18px 20px 22px;
-  border-radius: 14px;
+  padding: 16px 18px 18px;
+  border-radius: 10px;
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .progress-meta {
@@ -319,7 +333,7 @@ body {
 .progress-track {
   position: relative;
   width: 100%;
-  height: 12px;
+  height: 9px;
   border-radius: 999px;
   background: var(--track-bg);
   border: 1px solid var(--track-border);
@@ -359,20 +373,40 @@ body {
 }
 
 .stat-card {
-  padding: 18px 14px 20px;
-  border-radius: 14px;
+  padding: 16px 14px 18px;
+  border-radius: 10px;
   border: 1px solid var(--panel-border);
+  font-family: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   text-align: center;
-  transition: transform 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
 }
 
-.stat-card:hover {
+.stat-card--filterable {
+  cursor: pointer;
+}
+
+.stat-card--filterable:hover {
   transform: translateY(-2px);
+}
+
+.stat-card--goal.is-filter-active {
+  border-color: var(--card-goal-active-border);
+  box-shadow: 0 0 0 1px var(--card-goal-active-border);
+}
+
+.stat-card--completed.is-filter-active {
+  border-color: var(--card-completed-active-border);
+  box-shadow: 0 0 0 1px var(--card-completed-active-border);
+}
+
+.stat-card--inprogress.is-filter-active {
+  border-color: var(--card-inprogress-active-border);
+  box-shadow: 0 0 0 1px var(--card-inprogress-active-border);
 }
 
 .stat-label {
@@ -442,7 +476,7 @@ body {
    Bottom Course List Card (Notion Database Table Style)
    ========================================================================== */
 .courses-card {
-  border-radius: 14px;
+  border-radius: 10px;
   border: 1px solid var(--panel-border);
   background: var(--panel-bg);
   overflow: hidden;
@@ -657,6 +691,56 @@ body {
 .pill--pink { background: var(--pill-pink-bg); color: var(--pill-pink-text); }
 .pill--red { background: var(--pill-red-bg); color: var(--pill-red-text); }
 .pill--gray { background: var(--pill-gray-bg); color: var(--pill-gray-text); }
+
+/* Delete Row Action */
+.col-actions {
+  width: 58px;
+  text-align: right;
+}
+
+.delete-course-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: all 0.14s ease;
+}
+
+.courses-table tbody tr:hover .delete-course-btn,
+.delete-course-btn:focus-visible,
+.delete-course-btn.is-confirming {
+  opacity: 1;
+}
+
+.delete-course-btn:hover {
+  color: var(--pill-red-text);
+  background: var(--pill-red-bg);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.delete-course-btn.is-confirming {
+  color: var(--pill-red-text);
+  background: var(--pill-red-bg);
+  border-color: rgba(239, 68, 68, 0.45);
+  padding: 0 8px;
+}
+
+.delete-course-btn:disabled {
+  opacity: 0.4;
+  cursor: wait;
+}
 
 /* Footer "+ 과목 추가" */
 .table-footer-add {
@@ -916,6 +1000,53 @@ body {
   border-color: rgba(56, 217, 245, 0.7);
   background: rgba(56, 217, 245, 0.16);
   color: var(--card-completed-text);
+}
+
+.status-segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.status-seg-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.status-seg-btn small {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.status-seg-btn.is-active[data-status="수강중"] {
+  border-color: rgba(134, 239, 172, 0.45);
+  background: rgba(134, 239, 172, 0.12);
+  color: var(--card-inprogress-text);
+}
+
+.status-seg-btn.is-active[data-status="수강완료"] {
+  border-color: rgba(125, 211, 252, 0.45);
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--card-completed-text);
+}
+
+.status-seg-btn.is-active small {
+  color: inherit;
+  opacity: 0.82;
 }
 
 .modal-error {
