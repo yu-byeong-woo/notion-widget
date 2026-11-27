@@ -1094,3 +1094,211 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   Expandable Remaining Credits & Requirements Breakdown Panel
+   ========================================================================== */
+.stat-card--expandable {
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.16s ease, transform 0.14s ease, background-color 0.16s ease;
+}
+
+.stat-card--expandable:hover {
+  border-color: rgba(251, 191, 36, 0.48);
+  transform: translateY(-1px);
+}
+
+.stat-card--expandable.is-expanded {
+  border-color: rgba(251, 191, 36, 0.62);
+}
+
+.stat-chevron {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.7;
+  transition: transform 0.18s ease;
+}
+
+.stat-card--expandable.is-expanded .stat-chevron {
+  transform: rotate(180deg);
+}
+
+.req-panel {
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.req-panel.hidden {
+  display: none;
+}
+
+.req-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.req-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.req-panel-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.req-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .req-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.req-card {
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:root[data-theme="light"] .req-card {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.req-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.req-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.req-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px dashed var(--panel-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+}
+
+.req-badge-btn:hover {
+  border-color: var(--card-completed-border);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.req-inline-input {
+  width: 48px;
+  padding: 1px 4px;
+  border-radius: 5px;
+  border: 1px solid var(--card-completed-active-border);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: center;
+}
+
+:root[data-theme="light"] .req-inline-input {
+  background: #ffffff;
+}
+
+.req-bar-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--track-bg);
+  overflow: hidden;
+}
+
+.req-bar-inprogress {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--fill-inprogress);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.req-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--fill-gradient);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.req-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.req-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.req-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.req-row-val {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.req-row-val .is-done {
+  color: var(--card-inprogress-text);
+}
+
+.req-row-val .is-rem {
+  color: var(--card-remaining-text);
+}
+
+.req-sub-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  border-top: 1px solid var(--divider);
+  padding-top: 6px;
+}

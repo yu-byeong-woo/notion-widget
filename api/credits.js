@@ -69,8 +69,10 @@ function normalizeStatusKey(statusName) {
 
 function normalizeCategoryKey(categoryName) {
   const compact = String(categoryName || '').replace(/\s+/g, '');
-  if (compact === '전공필수') return '전공필수';
-  if (compact === '전공선택') return '전공선택';
+  if (compact === '기본전공' || compact === '전공필수') return '기본전공';
+  if (compact === '선택전공' || compact === '전공선택') return '선택전공';
+  if (compact === '교양필수') return '교양필수';
+  if (compact === '교양선택') return '교양선택';
   if (compact === '교양') return '교양';
   if (compact === '일반선택' || compact === '일반') return '일반선택';
   return categoryName || '';

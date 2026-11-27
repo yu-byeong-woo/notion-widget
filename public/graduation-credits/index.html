@@ -87,8 +87,9 @@
           <span class="progress-muted"> / <span id="progress-goal">136</span> 학점 완료 (<span id="progress-percent">0.0</span>%)</span>
         </div>
         <div class="progress-right">
-          <span id="progress-inprogress" class="progress-strong">0</span>
-          <span class="progress-muted"> 학점 수강 중</span>
+          <span class="progress-muted">수강 중 포함 남은 학점 </span>
+          <span id="progress-remaining-with-inprogress" class="progress-strong">136</span>
+          <span class="progress-muted"> 학점</span>
         </div>
       </div>
 
@@ -130,16 +131,17 @@
         <div class="stat-value" id="stat-completed">0</div>
       </button>
 
-      <article class="stat-card stat-card--remaining">
+      <button type="button" id="remaining-toggle-btn" class="stat-card stat-card--remaining stat-card--expandable" aria-expanded="false" aria-controls="requirements-panel" title="클릭하여 영역별 남은 학점 상세 보기">
         <div class="stat-label">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <polyline points="12 7 12 12 15.5 14" />
           </svg>
           <span>남은 학점</span>
+          <span class="stat-chevron" aria-hidden="true">▾</span>
         </div>
         <div class="stat-value" id="stat-remaining">136</div>
-      </article>
+      </button>
 
       <button type="button" class="stat-card stat-card--inprogress stat-card--filterable" data-status-filter="수강중" title="수강중 과목만 보기">
         <div class="stat-label">
@@ -153,6 +155,9 @@
       </button>
     </section>
 
+    <!-- Expandable Graduation Requirements Breakdown Panel -->
+    <section id="requirements-panel" class="req-panel hidden" aria-label="영역별 졸업 요건 및 남은 학점"></section>
+
     <!-- Bottom Course List Card -->
     <section class="courses-card" aria-label="과목 목록">
       <div class="tabs-bar">
@@ -165,29 +170,37 @@
             </svg>
             <span>전체</span>
           </button>
-          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="전공필수">
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="기본전공">
             <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <line x1="9" y1="4" x2="9" y2="20" />
               <line x1="15" y1="4" x2="15" y2="20" />
             </svg>
-            <span>전공필수</span>
+            <span>기본전공</span>
           </button>
-          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="전공선택">
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="선택전공">
             <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <line x1="9" y1="4" x2="9" y2="20" />
               <line x1="15" y1="4" x2="15" y2="20" />
             </svg>
-            <span>전공선택</span>
+            <span>선택전공</span>
           </button>
-          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="교양">
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="교양필수">
             <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <line x1="9" y1="4" x2="9" y2="20" />
               <line x1="15" y1="4" x2="15" y2="20" />
             </svg>
-            <span>교양</span>
+            <span>교양필수</span>
+          </button>
+          <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="교양선택">
+            <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <line x1="9" y1="4" x2="9" y2="20" />
+              <line x1="15" y1="4" x2="15" y2="20" />
+            </svg>
+            <span>교양선택</span>
           </button>
           <button type="button" class="tab-btn" role="tab" aria-selected="false" data-filter="일반선택">
             <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -323,8 +336,8 @@
           <div class="form-group">
             <label for="course-category-select" class="form-label">이수구분</label>
             <select id="course-category-select" class="form-select">
-              <option value="전공필수">전공필수</option>
-              <option value="전공선택">전공선택</option>
+              <option value="기본전공">기본전공</option>
+              <option value="선택전공">선택전공</option>
               <option value="교양필수">교양필수</option>
               <option value="교양선택">교양선택</option>
               <option value="일반선택">일반선택</option>

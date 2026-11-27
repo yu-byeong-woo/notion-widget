@@ -83,7 +83,7 @@
     <!-- Timetable Grid -->
     <section class="tt-grid-wrap" aria-label="주간 시간표">
       <div class="tt-grid-head">
-        <div class="tt-head-time"></div>
+        <div class="tt-head-time" id="tt-head-time" title="현재 학기 수강 학점 합계"></div>
         <div class="tt-head-day">월</div>
         <div class="tt-head-day">화</div>
         <div class="tt-head-day">수</div>
@@ -128,9 +128,10 @@
           <div class="tt-field">
             <label for="course-category">이수구분</label>
             <select id="course-category">
-              <option value="전공필수">전공필수</option>
-              <option value="전공선택">전공선택</option>
-              <option value="교양">교양</option>
+              <option value="기본전공">기본전공</option>
+              <option value="선택전공">선택전공</option>
+              <option value="교양필수">교양필수</option>
+              <option value="교양선택">교양선택</option>
               <option value="일반선택">일반선택</option>
             </select>
           </div>
@@ -164,7 +165,7 @@
             required
             placeholder="예: 13:00-15:00 또는 09:00~11:00 / 09:00~10:00"
           />
-          <p class="tt-field-hint">요일이 2개 이상이고 시간이 다르면 <code>/</code>로 구분해 입력합니다.</p>
+          <p class="tt-field-hint">같은 날 시간이 여러 개이거나 요일별 시간이 다르면 <code>/</code>로 구분해 입력합니다. (예: 0900~1000 / 1300~1500)</p>
         </div>
 
         <div id="course-form-error" class="tt-form-error hidden"></div>

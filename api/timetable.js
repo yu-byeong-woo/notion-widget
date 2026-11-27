@@ -312,6 +312,13 @@ function buildWriteProperties(schema, payload, isUpdate = false) {
   return properties;
 }
 
+function normalizeCategoryName(raw) {
+  const compact = String(raw || '').replace(/\s+/g, '');
+  if (compact === '전공필수' || compact === '기본전공') return '기본전공';
+  if (compact === '전공선택' || compact === '선택전공') return '선택전공';
+  return String(raw || '').trim();
+}
+
 function mapPageToCourse(page) {
   const props = page.properties || {};
   const name = getTitleText(props['이름'] || props['과목명'] || props['Name'], props);
@@ -319,7 +326,7 @@ function mapPageToCourse(page) {
   const days = rawDays.map(normalizeDayToken).filter(Boolean);
   const time = getRichText(props['시간'] || props['강의시간'] || props['Time']);
   const semester = getSelectName(props['학기'] || props['이수 학기'] || props['Semester']);
-  const category = getSelectName(props['이수구분'] || props['구분'] || props['Category']);
+  const category = normalizeCategoryName(getSelectName(props['이수구분'] || props['구분'] || props['Category']));
   const room = getRichText(props['강의실'] || props['장소'] || props['Room']);
   const credits = getNumberValue(props['학점'] || props['Credits']);
   const status = getSelectName(props['수강상태'] || props['상태'] || props['Status']);

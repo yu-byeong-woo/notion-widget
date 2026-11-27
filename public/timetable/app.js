@@ -142,6 +142,7 @@
     addCourseBtn: document.getElementById('add-course-btn'),
     statusBanner: document.getElementById('status-banner'),
     timeCol: document.getElementById('tt-time-col'),
+    headTime: document.getElementById('tt-head-time'),
     daysCols: document.getElementById('tt-days-cols'),
     modalBackdrop: document.getElementById('course-modal-backdrop'),
     modalTitle: document.getElementById('course-modal-title'),
@@ -349,13 +350,26 @@
       return parsedSegments;
     }
 
-    // Case 2: Pair days[i] with parsedSegments[i] (or fallback to first/last segment)
-    if (days.length > 0) {
+    // Case 2: Single day with multiple time segments (e.g. 월 + 0900~1000 / 1300~1500)
+    if (days.length === 1) {
+      for (const seg of parsedSegments) {
+        slots.push({
+          day: seg.day || days[0],
+          startMin: seg.startMin,
+          endMin: seg.endMin,
+          label: seg.label,
+        });
+      }
+      return slots;
+    }
+
+    // Case 3: Multiple days — pair days[i] with parsedSegments[i] (or fallback to last segment)
+    if (days.length > 1) {
       days.forEach((day, idx) => {
         const seg = parsedSegments[idx] || parsedSegments[parsedSegments.length - 1];
         if (seg) {
           slots.push({
-            day,
+            day: seg.day || day,
             startMin: seg.startMin,
             endMin: seg.endMin,
             label: seg.label,
@@ -646,8 +660,21 @@
     return laidOut;
   }
 
+  function normalizeCategoryName(cat) {
+    const compact = String(cat || '').replace(/\s+/g, '');
+    if (compact === '전공필수' || compact === '기본전공') return '기본전공';
+    if (compact === '전공선택' || compact === '선택전공') return '선택전공';
+    if (compact === '교양') return '교양선택';
+    return cat || '선택전공';
+  }
+
   function renderGridEvents() {
     const activeCourses = state.courses.filter((c) => (c.semester || '').trim() === state.activeSemester);
+    if (els.headTime) {
+      const totalCredits = activeCourses.reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+      const roundedCredits = Math.round(totalCredits * 10) / 10;
+      els.headTime.innerHTML = `<span class="tt-head-credits">${roundedCredits}학점</span>`;
+    }
     const colorMap = assignColorIndices(activeCourses);
 
     const rowHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row-height')) || 46;
@@ -769,7 +796,7 @@
     els.courseId.value = initial.id || '';
     els.courseName.value = initial.name || '';
     populateModalSemesterSelect(initial.semester || state.activeSemester);
-    els.courseCategory.value = initial.category || '전공선택';
+    els.courseCategory.value = normalizeCategoryName(initial.category || '선택전공');
     els.courseCredits.value = String(initial.credits || 3);
     setSelectedDaysInModal(initial.days || []);
     els.courseTime.value = initial.time || '';

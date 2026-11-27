@@ -4,7 +4,45 @@
   const WIDGET_KEY = new URLSearchParams(window.location.search).get('k') || '';
   const KEY_SUFFIX = WIDGET_KEY ? `_${WIDGET_KEY.slice(-12)}` : '';
   const STORAGE_KEY = `notion_credit_tracker_v1${KEY_SUFFIX}`;
+  const SETTINGS_KEY = `notion_credit_req_settings_v1${KEY_SUFFIX}`;
   const GRADUATION_GOAL = 136;
+  const DEFAULT_SETTINGS = {
+    totalGoal: 136,
+    majorGoal: 75,
+    basicMajorMin: 19,
+    liberalMin: 39,
+    liberalMax: 52,
+  };
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return { ...DEFAULT_SETTINGS };
+      const parsed = JSON.parse(raw);
+      return {
+        totalGoal: Number(parsed.totalGoal) > 0 ? Number(parsed.totalGoal) : DEFAULT_SETTINGS.totalGoal,
+        majorGoal: Number(parsed.majorGoal) >= 0 ? Number(parsed.majorGoal) : DEFAULT_SETTINGS.majorGoal,
+        basicMajorMin: Number(parsed.basicMajorMin) >= 0 ? Number(parsed.basicMajorMin) : DEFAULT_SETTINGS.basicMajorMin,
+        liberalMin: Number(parsed.liberalMin) >= 0 ? Number(parsed.liberalMin) : DEFAULT_SETTINGS.liberalMin,
+        liberalMax: Number(parsed.liberalMax) >= 0 ? Number(parsed.liberalMax) : DEFAULT_SETTINGS.liberalMax,
+      };
+    } catch {
+      return { ...DEFAULT_SETTINGS };
+    }
+  }
+
+  function saveSettings(settings) {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch {}
+  }
+
+  function normalizeCourseCategory(cat) {
+    const compact = String(cat || '').replace(/\s+/g, '');
+    if (compact === '기본전공' || compact === '전공필수') return '기본전공';
+    if (compact === '선택전공' || compact === '전공선택') return '선택전공';
+    return cat || '';
+  }
 
   function buildCreditsApiUrl(extraParams = {}) {
     const qs = new URLSearchParams();
@@ -18,6 +56,8 @@
 
   const state = {
     data: null,
+    settings: loadSettings(),
+    isReqOpen: false,
     activeFilter: '전체',
     statusFilter: '전체',
     isDemo: new URLSearchParams(window.location.search).get('demo') === '1',
@@ -34,7 +74,7 @@
     progressCompleted: document.getElementById('progress-completed'),
     progressGoal: document.getElementById('progress-goal'),
     progressPercent: document.getElementById('progress-percent'),
-    progressInProgress: document.getElementById('progress-inprogress'),
+    progressRemainingWithInProgress: document.getElementById('progress-remaining-with-inprogress'),
     progressBarContainer: document.getElementById('progress-bar-container'),
     progressFill: document.getElementById('progress-fill'),
     progressFillInProgress: document.getElementById('progress-fill-inprogress'),
@@ -42,6 +82,8 @@
     statCompleted: document.getElementById('stat-completed'),
     statRemaining: document.getElementById('stat-remaining'),
     statInProgress: document.getElementById('stat-inprogress'),
+    remainingToggleBtn: document.getElementById('remaining-toggle-btn'),
+    requirementsPanel: document.getElementById('requirements-panel'),
     statFilterCards: Array.from(document.querySelectorAll('.stat-card--filterable')),
     tabs: Array.from(document.querySelectorAll('.tab-btn')),
     tbody: document.getElementById('courses-tbody'),
@@ -131,9 +173,10 @@
     if (course.categoryColor && course.categoryColor !== 'default') {
       return notionColorToPill(course.categoryColor);
     }
-    if (course.category === '전공필수') return 'pill--purple';
-    if (course.category === '전공선택') return 'pill--blue';
-    if (course.category && course.category.includes('교양')) return 'pill--amber';
+    const cat = normalizeCourseCategory(course.category);
+    if (cat === '기본전공') return 'pill--purple';
+    if (cat === '선택전공') return 'pill--blue';
+    if (cat && cat.includes('교양')) return 'pill--amber';
     return 'pill--gray';
   }
 
@@ -168,7 +211,7 @@
   }
 
   function recomputeSummary(courses) {
-    const goal = state.data?.summary?.goalCredits || GRADUATION_GOAL;
+    const goal = state.settings.totalGoal || GRADUATION_GOAL;
     let completed = 0;
     let inProgress = 0;
     for (const c of courses) {
@@ -190,7 +233,7 @@
   }
 
   // =========================================================================
-  // Sorting: 1. 학기순 -> 2. 이수구분(전공필수, 전공선택, 교양, 일반) -> 3. 상태 -> 4. 학점순
+  // Sorting: 1. 학기순 -> 2. 이수구분(기본전공, 선택전공, 교양, 일반) -> 3. 상태 -> 4. 학점순
   // =========================================================================
   function getSemesterOrder(semester) {
     const match = String(semester || '').match(/(\d+)\s*학년\s*(\d+)\s*학기/);
@@ -201,9 +244,9 @@
   }
 
   function getCategoryOrder(category) {
-    const c = String(category || '').replace(/\s+/g, '');
-    if (c === '전공필수') return 1;
-    if (c === '전공선택') return 2;
+    const c = normalizeCourseCategory(category).replace(/\s+/g, '');
+    if (c === '기본전공') return 1;
+    if (c === '선택전공') return 2;
     if (c === '교양필수') return 3;
     if (c === '교양선택') return 4;
     if (c === '교양') return 5;
@@ -263,12 +306,12 @@
     const courses = [
       { id: '1', name: '인문학베이스캠프', credits: 2, status: '수강완료', category: '교양필수', semester: '2학년 2학기', semesterColor: 'blue', icon: '📘', url: null },
       { id: '2', name: '표현과소통 교양', credits: 2, status: '수강완료', category: '교양선택', semester: '2학년 2학기', semesterColor: 'brown', icon: '🎓', url: null },
-      { id: '3', name: '자료구조와 알고리즘', credits: 3, status: '수강완료', category: '전공필수', semester: '2학년 1학기', semesterColor: 'purple', icon: '💻', url: null },
-      { id: '4', name: '컴퓨터구조', credits: 3, status: '수강완료', category: '전공필수', semester: '2학년 1학기', semesterColor: 'purple', icon: '⚙️', url: null },
-      { id: '5', name: '확률과 통계', credits: 2, status: '수강완료', category: '전공선택', semester: '1학년 2학기', semesterColor: 'gray', icon: '📊', url: null },
-      { id: '6', name: '운영체제', credits: 3, status: '수강중', category: '전공필수', semester: '2학년 2학기', semesterColor: 'blue', icon: '🖥️', url: null },
-      { id: '7', name: '웹프로그래밍', credits: 3, status: '수강중', category: '전공선택', semester: '2학년 2학기', semesterColor: 'blue', icon: '🌐', url: null },
-      { id: '8', name: '데이터베이스설계', credits: 2, status: '수강중', category: '전공선택', semester: '2학년 2학기', semesterColor: 'blue', icon: '🗄️', url: null },
+      { id: '3', name: '자료구조와 알고리즘', credits: 3, status: '수강완료', category: '기본전공', semester: '2학년 1학기', semesterColor: 'purple', icon: '💻', url: null },
+      { id: '4', name: '컴퓨터구조', credits: 3, status: '수강완료', category: '기본전공', semester: '2학년 1학기', semesterColor: 'purple', icon: '⚙️', url: null },
+      { id: '5', name: '확률과 통계', credits: 2, status: '수강완료', category: '선택전공', semester: '1학년 2학기', semesterColor: 'gray', icon: '📊', url: null },
+      { id: '6', name: '운영체제', credits: 3, status: '수강중', category: '기본전공', semester: '2학년 2학기', semesterColor: 'blue', icon: '🖥️', url: null },
+      { id: '7', name: '웹프로그래밍', credits: 3, status: '수강중', category: '선택전공', semester: '2학년 2학기', semesterColor: 'blue', icon: '🌐', url: null },
+      { id: '8', name: '데이터베이스설계', credits: 2, status: '수강중', category: '선택전공', semester: '2학년 2학기', semesterColor: 'blue', icon: '🗄️', url: null },
     ];
     return {
       summary: {
@@ -305,15 +348,12 @@
   }
 
   function renderSummary(summary) {
-    const goal = summary.goalCredits || GRADUATION_GOAL;
+    const goal = state.settings.totalGoal || summary.goalCredits || GRADUATION_GOAL;
     const completed = summary.completedCredits || 0;
     const inProgress = summary.inProgressCredits || 0;
-    const remaining = typeof summary.remainingCredits === 'number'
-      ? summary.remainingCredits
-      : Math.max(0, goal - completed);
-    const rate = typeof summary.completionRate === 'number'
-      ? summary.completionRate
-      : Math.min(100, Math.round((completed / goal) * 1000) / 10);
+    const remaining = Math.max(0, Math.round((goal - completed) * 10) / 10);
+    const remainingWithInProgress = Math.max(0, Math.round((goal - completed - inProgress) * 10) / 10);
+    const rate = Math.min(100, Math.round((completed / goal) * 1000) / 10);
 
     const completedPct = Math.min(100, (completed / goal) * 100);
     const totalWithInProgressPct = Math.min(100, ((completed + inProgress) / goal) * 100);
@@ -321,7 +361,9 @@
     el.progressCompleted.textContent = formatNumber(completed);
     el.progressGoal.textContent = formatNumber(goal);
     el.progressPercent.textContent = rate.toFixed(1);
-    el.progressInProgress.textContent = formatNumber(inProgress);
+    if (el.progressRemainingWithInProgress) {
+      el.progressRemainingWithInProgress.textContent = formatNumber(remainingWithInProgress);
+    }
 
     el.progressBarContainer.setAttribute('aria-valuemax', String(goal));
     el.progressBarContainer.setAttribute('aria-valuenow', String(completed));
@@ -332,6 +374,251 @@
     el.statCompleted.textContent = formatNumber(completed);
     el.statRemaining.textContent = formatNumber(remaining);
     el.statInProgress.textContent = formatNumber(inProgress);
+
+    renderRequirementsPanel();
+  }
+
+  function computeCategoryBreakdown(courses) {
+    const buckets = {
+      basicMajor: { done: 0, ing: 0 },
+      electiveMajor: { done: 0, ing: 0 },
+      liberalReq: { done: 0, ing: 0 },
+      liberalElec: { done: 0, ing: 0 },
+      generalElec: { done: 0, ing: 0 },
+    };
+
+    for (const c of courses) {
+      const cr = Number(c.credits) || 0;
+      const cat = normalizeCourseCategory(c.category).replace(/\s+/g, '');
+      const isDone = c.status === '수강완료';
+      const isIng = c.status === '수강중';
+      if (!isDone && !isIng) continue;
+
+      let key = 'generalElec';
+      if (cat === '기본전공') key = 'basicMajor';
+      else if (cat === '선택전공') key = 'electiveMajor';
+      else if (cat === '교양필수') key = 'liberalReq';
+      else if (cat === '교양선택' || cat === '교양') key = 'liberalElec';
+      else if (cat === '일반선택' || cat === '일반') key = 'generalElec';
+
+      if (isDone) buckets[key].done += cr;
+      else if (isIng) buckets[key].ing += cr;
+    }
+
+    for (const k of Object.keys(buckets)) {
+      buckets[k].done = Math.round(buckets[k].done * 10) / 10;
+      buckets[k].ing = Math.round(buckets[k].ing * 10) / 10;
+    }
+    return buckets;
+  }
+
+  function renderRequirementsPanel() {
+    if (!el.requirementsPanel) return;
+    if (!state.isReqOpen) {
+      el.requirementsPanel.classList.add('hidden');
+      return;
+    }
+
+    el.requirementsPanel.classList.remove('hidden');
+    const courses = state.data?.courses || [];
+    const b = computeCategoryBreakdown(courses);
+    const s = state.settings;
+
+    const majorDone = Math.round((b.basicMajor.done + b.electiveMajor.done) * 10) / 10;
+    const majorIng = Math.round((b.basicMajor.ing + b.electiveMajor.ing) * 10) / 10;
+    const basicRem = Math.max(0, Math.round((s.basicMajorMin - b.basicMajor.done) * 10) / 10);
+    const majorRem = Math.max(0, Math.round((s.majorGoal - majorDone) * 10) / 10);
+    const majorDonePct = s.majorGoal > 0 ? Math.min(100, (majorDone / s.majorGoal) * 100) : 0;
+    const majorIngPct = s.majorGoal > 0 ? Math.min(100, ((majorDone + majorIng) / s.majorGoal) * 100) : 0;
+
+    const liberalDone = Math.round((b.liberalReq.done + b.liberalElec.done) * 10) / 10;
+    const liberalIng = Math.round((b.liberalReq.ing + b.liberalElec.ing) * 10) / 10;
+    const liberalMinRem = Math.max(0, Math.round((s.liberalMin - liberalDone) * 10) / 10);
+    const liberalMaxRem = Math.max(0, Math.round((s.liberalMax - liberalDone) * 10) / 10);
+    const liberalDonePct = s.liberalMax > 0 ? Math.min(100, (liberalDone / s.liberalMax) * 100) : 0;
+    const liberalIngPct = s.liberalMax > 0 ? Math.min(100, ((liberalDone + liberalIng) / s.liberalMax) * 100) : 0;
+
+    const freeGoal = Math.max(0, Math.round((s.totalGoal - s.majorGoal - s.liberalMax) * 10) / 10);
+    const freeDone = b.generalElec.done;
+    const freeIng = b.generalElec.ing;
+    const freeRem = Math.max(0, Math.round((freeGoal - freeDone) * 10) / 10);
+    const freeDonePct = freeGoal > 0 ? Math.min(100, (freeDone / freeGoal) * 100) : (freeDone > 0 ? 100 : 0);
+    const freeIngPct = freeGoal > 0 ? Math.min(100, ((freeDone + freeIng) / freeGoal) * 100) : (freeDone + freeIng > 0 ? 100 : 0);
+
+    el.requirementsPanel.innerHTML = `
+      <div class="req-panel-head">
+        <div class="req-panel-title">영역별 졸업 요건 및 남은 학점</div>
+        <div class="req-panel-hint">
+          전체 목표
+          <button type="button" class="req-badge-btn" data-setting="totalGoal" title="클릭해서 전체 졸업 학점 수정">${formatNumber(s.totalGoal)}학점 ✎</button>
+          · 기준 숫자를 클릭하면 바로 수정됩니다
+        </div>
+      </div>
+
+      <div class="req-grid">
+        <!-- 전공 카드 -->
+        <div class="req-card">
+          <div class="req-card-head">
+            <span class="req-card-title">전공</span>
+            <button type="button" class="req-badge-btn" data-setting="majorGoal" title="클릭해서 전공 목표 학점 수정">목표 ${formatNumber(s.majorGoal)}학점 ✎</button>
+          </div>
+          <div class="req-bar-track">
+            <div class="req-bar-inprogress" style="width:${majorIngPct}%"></div>
+            <div class="req-bar-fill" style="width:${majorDonePct}%"></div>
+          </div>
+          <div class="req-rows">
+            <div class="req-row">
+              <span class="req-row-label">
+                기본전공
+                <button type="button" class="req-badge-btn" data-setting="basicMajorMin" title="클릭해서 기본전공 최소 학점 수정">최소 ${formatNumber(s.basicMajorMin)} ✎</button>
+              </span>
+              <span class="req-row-val">
+                ${formatNumber(b.basicMajor.done)}이수${b.basicMajor.ing ? ` (+${formatNumber(b.basicMajor.ing)})` : ''} ·
+                ${basicRem === 0 ? '<span class="is-done">달성 ✓</span>' : `<span class="is-rem">${formatNumber(basicRem)} 남음</span>`}
+              </span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">선택전공</span>
+              <span class="req-row-val">${formatNumber(b.electiveMajor.done)}이수${b.electiveMajor.ing ? ` (+${formatNumber(b.electiveMajor.ing)} 수강중)` : ''}</span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">전공 합계</span>
+              <span class="req-row-val">
+                ${formatNumber(majorDone)} / ${formatNumber(s.majorGoal)} ·
+                ${majorRem === 0 ? '<span class="is-done">달성 ✓</span>' : `<span class="is-rem">${formatNumber(majorRem)} 남음</span>`}
+              </span>
+            </div>
+          </div>
+          <div class="req-sub-note">기본전공 ${formatNumber(s.basicMajorMin)}학점 이상 + 선택전공으로 총 ${formatNumber(s.majorGoal)}학점 이상 이수</div>
+        </div>
+
+        <!-- 교양 카드 -->
+        <div class="req-card">
+          <div class="req-card-head">
+            <span class="req-card-title">교양</span>
+            <span>
+              <button type="button" class="req-badge-btn" data-setting="liberalMin" title="클릭해서 교양 최소 학점 수정">최소 ${formatNumber(s.liberalMin)} ✎</button>
+              <button type="button" class="req-badge-btn" data-setting="liberalMax" title="클릭해서 교양 최대 학점 수정">최대 ${formatNumber(s.liberalMax)} ✎</button>
+            </span>
+          </div>
+          <div class="req-bar-track">
+            <div class="req-bar-inprogress" style="width:${liberalIngPct}%"></div>
+            <div class="req-bar-fill" style="width:${liberalDonePct}%"></div>
+          </div>
+          <div class="req-rows">
+            <div class="req-row">
+              <span class="req-row-label">교양필수</span>
+              <span class="req-row-val">${formatNumber(b.liberalReq.done)}이수${b.liberalReq.ing ? ` (+${formatNumber(b.liberalReq.ing)} 수강중)` : ''}</span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">교양선택</span>
+              <span class="req-row-val">${formatNumber(b.liberalElec.done)}이수${b.liberalElec.ing ? ` (+${formatNumber(b.liberalElec.ing)} 수강중)` : ''}</span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">교양 합계</span>
+              <span class="req-row-val">
+                ${formatNumber(liberalDone)}학점 ·
+                ${liberalMinRem === 0 ? '<span class="is-done">최소 달성 ✓</span>' : `<span class="is-rem">최소까지 ${formatNumber(liberalMinRem)} 남음</span>`}
+              </span>
+            </div>
+          </div>
+          <div class="req-sub-note">최대 ${formatNumber(s.liberalMax)}학점까지 인정 (잔여 가능 ${formatNumber(liberalMaxRem)}학점)</div>
+        </div>
+
+        <!-- 일반선택 / 잔여 자유 학점 카드 -->
+        <div class="req-card">
+          <div class="req-card-head">
+            <span class="req-card-title">일반선택 · 잔여</span>
+            <span class="req-badge-btn" style="cursor:default;border-style:solid;">자동 ${formatNumber(freeGoal)}학점</span>
+          </div>
+          <div class="req-bar-track">
+            <div class="req-bar-inprogress" style="width:${freeIngPct}%"></div>
+            <div class="req-bar-fill" style="width:${freeDonePct}%"></div>
+          </div>
+          <div class="req-rows">
+            <div class="req-row">
+              <span class="req-row-label">계산식</span>
+              <span class="req-row-val">${formatNumber(s.totalGoal)} - ${formatNumber(s.majorGoal)} - ${formatNumber(s.liberalMax)} = ${formatNumber(freeGoal)}</span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">일반선택 이수</span>
+              <span class="req-row-val">${formatNumber(freeDone)}이수${freeIng ? ` (+${formatNumber(freeIng)} 수강중)` : ''}</span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">남은 학점</span>
+              <span class="req-row-val">
+                ${freeRem === 0 ? '<span class="is-done">달성 ✓</span>' : `<span class="is-rem">${formatNumber(freeRem)} 남음</span>`}
+              </span>
+            </div>
+          </div>
+          <div class="req-sub-note">선택전공 또는 일반선택 과목으로 채울 수 있는 학점입니다.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function initRequirementsPanel() {
+    if (el.remainingToggleBtn) {
+      el.remainingToggleBtn.addEventListener('click', () => {
+        state.isReqOpen = !state.isReqOpen;
+        el.remainingToggleBtn.classList.toggle('is-expanded', state.isReqOpen);
+        el.remainingToggleBtn.setAttribute('aria-expanded', state.isReqOpen ? 'true' : 'false');
+        renderRequirementsPanel();
+      });
+    }
+
+    if (el.requirementsPanel) {
+      el.requirementsPanel.addEventListener('click', (e) => {
+        const btn = e.target.closest('.req-badge-btn[data-setting]');
+        if (!btn || btn.querySelector('input')) return;
+        const key = btn.getAttribute('data-setting');
+        if (!key || !(key in state.settings)) return;
+
+        const currentVal = state.settings[key];
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = key === 'totalGoal' ? '1' : '0';
+        input.max = '300';
+        input.step = '1';
+        input.className = 'req-inline-input';
+        input.value = String(currentVal);
+
+        btn.textContent = '';
+        btn.appendChild(input);
+        input.focus();
+        input.select();
+
+        let committed = false;
+        const commit = () => {
+          if (committed) return;
+          committed = true;
+          const nextVal = Number(input.value);
+          const minVal = key === 'totalGoal' ? 1 : 0;
+          if (Number.isFinite(nextVal) && nextVal >= minVal) {
+            state.settings[key] = Math.round(nextVal * 10) / 10;
+            saveSettings(state.settings);
+          }
+          if (state.data) {
+            const nextSummary = recomputeSummary(state.data.courses || []);
+            state.data = { ...state.data, summary: nextSummary };
+            renderSummary(nextSummary);
+          } else {
+            renderRequirementsPanel();
+          }
+        };
+
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') {
+            ev.preventDefault();
+            commit();
+          } else if (ev.key === 'Escape') {
+            committed = true;
+            renderRequirementsPanel();
+          }
+        });
+      });
+    }
   }
 
   function renderCourses() {
@@ -342,13 +629,14 @@
         return false;
       }
       if (state.activeFilter === '전체') return true;
-      if (state.activeFilter === '교양') {
-        return c.category === '교양' || (c.category && c.category.includes('교양'));
+      const cat = normalizeCourseCategory(c.category);
+      if (state.activeFilter === '교양선택') {
+        return cat === '교양선택' || cat === '교양';
       }
       if (state.activeFilter === '일반선택') {
-        return c.category === '일반선택' || c.category === '일반';
+        return cat === '일반선택' || cat === '일반';
       }
-      return c.category === state.activeFilter;
+      return cat === state.activeFilter;
     });
 
     if (filtered.length === 0) {
@@ -742,6 +1030,7 @@
     initThemeSync();
     initTabs();
     initStatFilters();
+    initRequirementsPanel();
     initTableActions();
     initModal();
 
