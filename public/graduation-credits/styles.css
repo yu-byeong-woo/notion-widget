@@ -1295,6 +1295,29 @@ body {
   color: var(--card-remaining-text);
 }
 
+.val-done {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+:root[data-theme="light"] .val-done {
+  color: #111827;
+}
+
+.val-ing {
+  color: #facc15;
+  font-weight: 700;
+}
+
+:root[data-theme="light"] .val-ing {
+  color: #ca8a04;
+}
+
+.val-total {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
 .req-sub-note {
   font-size: 11px;
   color: var(--text-muted);

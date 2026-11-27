@@ -412,6 +412,15 @@
     return buckets;
   }
 
+  function formatCreditSumHtml(done, ing) {
+    const d = `<span class="val-done">${formatNumber(done)}</span>`;
+    if (ing > 0) {
+      const total = Math.round((done + ing) * 10) / 10;
+      return `${d} + <span class="val-ing">${formatNumber(ing)}</span> = <span class="val-total">${formatNumber(total)}</span>`;
+    }
+    return d;
+  }
+
   function renderRequirementsPanel() {
     if (!el.requirementsPanel) return;
     if (!state.isReqOpen) {
@@ -424,30 +433,34 @@
     const b = computeCategoryBreakdown(courses);
     const s = state.settings;
 
+    const basicTotal = Math.round((b.basicMajor.done + b.basicMajor.ing) * 10) / 10;
     const majorDone = Math.round((b.basicMajor.done + b.electiveMajor.done) * 10) / 10;
     const majorIng = Math.round((b.basicMajor.ing + b.electiveMajor.ing) * 10) / 10;
-    const basicRem = Math.max(0, Math.round((s.basicMajorMin - b.basicMajor.done) * 10) / 10);
-    const majorRem = Math.max(0, Math.round((s.majorGoal - majorDone) * 10) / 10);
+    const majorTotal = Math.round((majorDone + majorIng) * 10) / 10;
+    const basicRem = Math.max(0, Math.round((s.basicMajorMin - basicTotal) * 10) / 10);
+    const majorRem = Math.max(0, Math.round((s.majorGoal - majorTotal) * 10) / 10);
     const majorDonePct = s.majorGoal > 0 ? Math.min(100, (majorDone / s.majorGoal) * 100) : 0;
-    const majorIngPct = s.majorGoal > 0 ? Math.min(100, ((majorDone + majorIng) / s.majorGoal) * 100) : 0;
+    const majorIngPct = s.majorGoal > 0 ? Math.min(100, (majorTotal / s.majorGoal) * 100) : 0;
 
     const liberalDone = Math.round((b.liberalReq.done + b.liberalElec.done) * 10) / 10;
     const liberalIng = Math.round((b.liberalReq.ing + b.liberalElec.ing) * 10) / 10;
-    const liberalMinRem = Math.max(0, Math.round((s.liberalMin - liberalDone) * 10) / 10);
-    const liberalMaxRem = Math.max(0, Math.round((s.liberalMax - liberalDone) * 10) / 10);
+    const liberalTotal = Math.round((liberalDone + liberalIng) * 10) / 10;
+    const liberalMinRem = Math.max(0, Math.round((s.liberalMin - liberalTotal) * 10) / 10);
+    const liberalMaxRem = Math.max(0, Math.round((s.liberalMax - liberalTotal) * 10) / 10);
     const liberalDonePct = s.liberalMax > 0 ? Math.min(100, (liberalDone / s.liberalMax) * 100) : 0;
-    const liberalIngPct = s.liberalMax > 0 ? Math.min(100, ((liberalDone + liberalIng) / s.liberalMax) * 100) : 0;
+    const liberalIngPct = s.liberalMax > 0 ? Math.min(100, (liberalTotal / s.liberalMax) * 100) : 0;
 
     const freeGoal = Math.max(0, Math.round((s.totalGoal - s.majorGoal - s.liberalMax) * 10) / 10);
     const freeDone = b.generalElec.done;
     const freeIng = b.generalElec.ing;
-    const freeRem = Math.max(0, Math.round((freeGoal - freeDone) * 10) / 10);
+    const freeTotal = Math.round((freeDone + freeIng) * 10) / 10;
+    const freeRem = Math.max(0, Math.round((freeGoal - freeTotal) * 10) / 10);
     const freeDonePct = freeGoal > 0 ? Math.min(100, (freeDone / freeGoal) * 100) : (freeDone > 0 ? 100 : 0);
-    const freeIngPct = freeGoal > 0 ? Math.min(100, ((freeDone + freeIng) / freeGoal) * 100) : (freeDone + freeIng > 0 ? 100 : 0);
+    const freeIngPct = freeGoal > 0 ? Math.min(100, (freeTotal / freeGoal) * 100) : (freeTotal > 0 ? 100 : 0);
 
     el.requirementsPanel.innerHTML = `
       <div class="req-panel-head">
-        <div class="req-panel-title">영역별 졸업 요건 및 남은 학점</div>
+        <div class="req-panel-title">영역별 졸업 요건 및 남은 학점 <span style="font-weight:500;color:var(--text-muted);">(흰색: 수강완료 · <span class="val-ing">노란색</span>: 수강중)</span></div>
         <div class="req-panel-hint">
           전체 목표
           <button type="button" class="req-badge-btn" data-setting="totalGoal" title="클릭해서 전체 졸업 학점 수정">${formatNumber(s.totalGoal)}학점 ✎</button>
@@ -473,18 +486,18 @@
                 <button type="button" class="req-badge-btn" data-setting="basicMajorMin" title="클릭해서 기본전공 최소 학점 수정">최소 ${formatNumber(s.basicMajorMin)} ✎</button>
               </span>
               <span class="req-row-val">
-                ${formatNumber(b.basicMajor.done)}이수${b.basicMajor.ing ? ` (+${formatNumber(b.basicMajor.ing)})` : ''} ·
+                ${formatCreditSumHtml(b.basicMajor.done, b.basicMajor.ing)} ·
                 ${basicRem === 0 ? '<span class="is-done">달성 ✓</span>' : `<span class="is-rem">${formatNumber(basicRem)} 남음</span>`}
               </span>
             </div>
             <div class="req-row">
               <span class="req-row-label">선택전공</span>
-              <span class="req-row-val">${formatNumber(b.electiveMajor.done)}이수${b.electiveMajor.ing ? ` (+${formatNumber(b.electiveMajor.ing)} 수강중)` : ''}</span>
+              <span class="req-row-val">${formatCreditSumHtml(b.electiveMajor.done, b.electiveMajor.ing)}</span>
             </div>
             <div class="req-row">
               <span class="req-row-label">전공 합계</span>
               <span class="req-row-val">
-                ${formatNumber(majorDone)} / ${formatNumber(s.majorGoal)} ·
+                ${formatCreditSumHtml(majorDone, majorIng)} / ${formatNumber(s.majorGoal)} ·
                 ${majorRem === 0 ? '<span class="is-done">달성 ✓</span>' : `<span class="is-rem">${formatNumber(majorRem)} 남음</span>`}
               </span>
             </div>
@@ -507,22 +520,23 @@
           </div>
           <div class="req-rows">
             <div class="req-row">
-              <span class="req-row-label">교양필수</span>
-              <span class="req-row-val">${formatNumber(b.liberalReq.done)}이수${b.liberalReq.ing ? ` (+${formatNumber(b.liberalReq.ing)} 수강중)` : ''}</span>
-            </div>
-            <div class="req-row">
-              <span class="req-row-label">교양선택</span>
-              <span class="req-row-val">${formatNumber(b.liberalElec.done)}이수${b.liberalElec.ing ? ` (+${formatNumber(b.liberalElec.ing)} 수강중)` : ''}</span>
-            </div>
-            <div class="req-row">
               <span class="req-row-label">교양 합계</span>
+              <span class="req-row-val">${formatCreditSumHtml(liberalDone, liberalIng)}학점</span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">최소 기준 (${formatNumber(s.liberalMin)}학점)</span>
               <span class="req-row-val">
-                ${formatNumber(liberalDone)}학점 ·
-                ${liberalMinRem === 0 ? '<span class="is-done">최소 달성 ✓</span>' : `<span class="is-rem">최소까지 ${formatNumber(liberalMinRem)} 남음</span>`}
+                ${liberalMinRem === 0 ? '<span class="is-done">최소 달성 ✓</span>' : `<span class="is-rem">${formatNumber(liberalMinRem)} 남음</span>`}
+              </span>
+            </div>
+            <div class="req-row">
+              <span class="req-row-label">최대 한도 (${formatNumber(s.liberalMax)}학점)</span>
+              <span class="req-row-val">
+                ${liberalMaxRem === 0 ? '<span class="is-done">최대 채움</span>' : `잔여 가능 ${formatNumber(liberalMaxRem)}학점`}
               </span>
             </div>
           </div>
-          <div class="req-sub-note">최대 ${formatNumber(s.liberalMax)}학점까지 인정 (잔여 가능 ${formatNumber(liberalMaxRem)}학점)</div>
+          <div class="req-sub-note">최소 ${formatNumber(s.liberalMin)}학점 ~ 최대 ${formatNumber(s.liberalMax)}학점 인정 (수강 중 포함)</div>
         </div>
 
         <!-- 일반선택 / 잔여 자유 학점 카드 -->
@@ -542,7 +556,7 @@
             </div>
             <div class="req-row">
               <span class="req-row-label">일반선택 이수</span>
-              <span class="req-row-val">${formatNumber(freeDone)}이수${freeIng ? ` (+${formatNumber(freeIng)} 수강중)` : ''}</span>
+              <span class="req-row-val">${formatCreditSumHtml(freeDone, freeIng)}학점</span>
             </div>
             <div class="req-row">
               <span class="req-row-label">남은 학점</span>
